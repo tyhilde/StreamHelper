@@ -1,0 +1,51 @@
+{
+  "name": "streamhelper",
+  "version": "0.0.1",
+  "description": "A Twitch tool to helper streamers",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha ./tests/*.tests.js",
+    "test-utils": "mocha ./modules/tests/*.tests.js",
+    "lint": "eslint ./**/*.js",
+    "postinstall": "npm i alexa-sdk seedrandom --prefix dist",
+    "deploy": "gulp deploy",
+    "debug-mocha": "iron-node node_modules/mocha/bin/_mocha ./tests/*.tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TODO/myREPO.git"
+  },
+  "keywords": [
+    "twitch",
+    "stream",
+    "helper",
+    "clips",
+    "alexa"
+  ],
+  "author": "Tyler Hilde",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TODO/myREPO/issues"
+  },
+  "homepage": "https://github.com/TODO/myREPO#readme",
+  "dependencies": {
+    "alexa-sdk": "^1.0.3",
+    "seedrandom": "^2.4.2",
+    "tmi.js": "^1.2.1"
+  },
+  "devDependencies": {
+    "aws-lambda-mock-context": "^3.0.0",
+    "del": "^2.2.1",
+    "eslint": "^3.1.1",
+    "eslint-config-airbnb-base": "^5.0.0",
+    "eslint-plugin-import": "^1.11.1",
+    "gulp": "^3.9.1",
+    "gulp-install": "^0.6.0",
+    "gulp-replace-task": "^0.11.0",
+    "gulp-zip": "^3.2.0",
+    "mocha": "^2.5.3",
+    "nock": "^10.0.1",
+    "node-aws-lambda": "^0.1.8",
+    "run-sequence": "^1.2.2"
+  }
+}
