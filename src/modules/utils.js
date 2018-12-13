@@ -1,22 +1,24 @@
 const https = require('https');
 const tmi = require('tmi.js');
 
-const {TwitchAppClientId} = require('../secrets/credentials');
+const {
+    TwitchAppClientId,
+    TwitchBotPassword
+} = require('../secrets/credentials');
 
 function isAccessTokenValid(accessToken) {
     return !!(accessToken);
 }
 
-// TODO: stop passing clientId through and just directly use TwitchAppClientId
-function getPath(path, userName, accessToken, clientId) {
+function getPath({path, userName, userId, accessToken}) {
     const paths = {
-        userId: `/helix/users?login=${userName}`,
+        userId: `/helix/users`,
         basicInfo: `/kraken/channels/${userName}?oauth_token=${accessToken}`,
         followers: `/kraken/channels/${userName}/follows?oauth_token=${accessToken}`,
         viewers: '/kraken/streams/' + userName + '?oauth_token=' + accessToken,
         subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc",
-        userName: '/kraken?oauth_token=' + accessToken + '&client_id=' + clientId,
-        live: `/kraken/streams/${userName}?client_id=${clientId}`,
+        userName: '/kraken?oauth_token=' + accessToken + '&client_id=' + TwitchAppClientId,
+        live: `/kraken/streams/${userName}?client_id=${TwitchAppClientId}`,
         createClip: '/helix/clips?broadcaster_id=' + userId,
         default: '/kraken/channels/' + userName + '?oauth_token=' + accessToken,
         newLive: '/helix/users?login=backsh00ter'
@@ -25,8 +27,8 @@ function getPath(path, userName, accessToken, clientId) {
     return paths[path];
 }
 
-function fetchJson({endpoint, method, accessToken, userName, clientId}, callback) {
-    var path = getPath(endpoint, userName, accessToken, clientId);
+function fetchJson({endpoint, method, accessToken, userName, userId}, callback) {
+    var path = getPath({path: endpoint, userName, userId, accessToken});
 
     var options = {
         host: 'api.twitch.tv',
@@ -60,18 +62,28 @@ function fetchJson({endpoint, method, accessToken, userName, clientId}, callback
     req.end();
 }
 
-const userId = '32799121';
-
 function getUserName(accessToken, callback) {
     fetchJson({
         endpoint: 'userName',
         method: 'GET',
-        accessToken,
-        clientId: TwitchAppClientId
+        accessToken
     }, (res) => {
         const userName = res.token.user_name;
         callback(userName);
     });  
+}
+
+function getUserId(accessToken, callback) {
+    fetchJson({
+        endpoint: 'userId',
+        method: 'GET',
+        accessToken
+    }, (res) => {
+        callback({
+            userId: res.data[0].id,
+            userName: res.data[0].display_name
+        });
+    });
 }
 
 function isStreamLive(accessToken, callback) {
@@ -80,11 +92,40 @@ function isStreamLive(accessToken, callback) {
             endpoint: 'live',
             method: 'GET',
             accessToken,
-            userName: user,
-            clientId: TwitchAppClientId
+            userName: user
         }, (res) => {
             const isLive = !!(res.stream);
             callback(isLive);
+        });
+    });
+}
+
+function getStreamUpTime(accessToken, callback) {
+    getUserName(accessToken, (user) => {
+        fetchJson({
+            endpoint: 'live',
+            method: 'GET',
+            accessToken,
+            userName: user
+        }, (res) => {
+            const streamIsLive = !!(res.stream);
+            if(streamIsLive) {
+                const streamStart = res.stream.created_at;
+                const startDate = new Date(streamStart);
+                const currentDate = new Date();
+                
+                const totalMinsUptime = Math.floor((currentDate - startDate) / (1000 * 60));
+
+                const uptime = {
+                    minutes: totalMinsUptime % 60,
+                    hours: Math.floor(totalMinsUptime / 60)
+                }
+
+                callback(uptime);
+            }
+            else {
+                callback("STREAM_OFFLINE");
+            }
         });
     });
 }
@@ -95,8 +136,7 @@ function getFollowers(accessToken, callback) {
             endpoint: 'followers',
             method: 'GET',
             accessToken,
-            userName: user,
-            clientId: TwitchAppClientId
+            userName: user
         }, (res) => {
             callback(res);
         });
@@ -127,19 +167,129 @@ function getFollowersLastFive(accessToken, callback) {
     });
 }
 
+function getViewerCount(accessToken, callback) {
+    getUserName(accessToken, (user) => {
+        fetchJson({
+            endpoint: 'viewers',
+            method: 'GET',
+            accessToken,
+            userName: user
+        }, (res) => {
+            const count = res.stream ? res.stream.viewers : 0;
+            callback(count);
+        });
+    });
+}
+
+function getSubscribers(accessToken, callback) {
+    getUserName(accessToken, (user) => {
+        fetchJson({
+            endpoint: 'subscribers',
+            method: 'GET',
+            accessToken,
+            userName: user
+        }, (res) => {
+            callback(res);
+        });
+    });
+}
+
+function getSubscribersCount(accessToken, callback) {
+    getSubscribers(accessToken, (subscribers) => {
+        const isPartnered = !!(subscribers._total);
+        const count = isPartnered ? subscribers._total : "NOT_A_PARTNER";
+
+        callback(count);
+    });
+}
+
+function getSubscribersLast(accessToken, callback) {
+    getSubscribers(accessToken, (subscribers) => {
+        const isPartnered = !!(subscribers._total);
+        // Counts self as first subscriber
+        const lastSubscriber = subscribers._total > 1 ? subscribers.subscriptions[0].user.display_name : "NO_SUBSCRIBERS";
+        
+        callback(isPartnered ? lastSubscriber : "NOT_A_PARTNER");
+    });
+}
+
+function getSubscribersLastFive(accessToken, callback) {
+    getSubscribers(accessToken, (subscribers) => {
+        const isPartnered = !!(subscribers._total);
+        // Counts self as first subscriber, if less than 5 don't include self in output
+        const endSlice = subscribers._total > 5 ? 5 : subscribers._total -1;
+        const lastFiveSubscribers = subscribers.subscriptions && subscribers._total > 1 ?
+            subscribers.subscriptions.slice(0, endSlice).map(subscribers => {
+                return subscribers.user.display_name;
+            }) :
+            "NO_SUBSCRIBERS";
+
+        callback(isPartnered ? lastFiveSubscribers : "NOT_A_PARTNER");
+    });
+}
+
+function createClip(accessToken, callback) {
+    getUserId(accessToken, (user) => {
+        fetchJson({
+            endpoint: 'createClip',
+            method: 'POST',
+            accessToken,
+            userId: user.userId
+        }, (res) => {
+            const clip = res.data ? res.data[0] : "STREAM_OFFLINE";
+            
+            callback(clip);
+        });
+    })
+}
+
+function sendTwitchMessage(clipUrl, userName, callback) {
+    var options = {
+        options: {
+            debug: true
+        },
+        connection: {
+            cluster: "aws",
+            reconnect: true
+        },
+        identity: { // Identity of user that is sending the message
+            username: "twitchtoolsbot",
+            password: TwitchBotPassword
+        },
+        channel: userName // Channel that receives message
+    };
+
+    var client = new tmi.client(options);
+
+    client.connect().then(() => {
+        client.say(options.channel, clipUrl).then(() => {
+            client.disconnect()
+        });
+        callback("Message_Sent");
+    }).catch(function(err) {
+        console.log('Error detected trying to connect to chat:', err);
+        client.disconnect();
+        callback("Message_Failed_To_Send");
+    });
+}
+
+
 
 module.exports = {
     isStreamLive: isStreamLive,
     isAccessTokenValid: isAccessTokenValid,
-    // getUserId: getUserId,
+    getUserId: getUserId,
     getUserName: getUserName,
     getFollowers: getFollowers,
     getFollowersCount: getFollowersCount,
     getFollowersLast: getFollowersLast,
-    getFollowersLastFive: getFollowersLastFive
-    // getFollowers: getFollowers,
-    // getViewers: getViewers,
-    // getSubscribers: getSubscribers,
-    // createClip: createClip,
-    // sendTwitchMessage: sendTwitchMessage
+    getFollowersLastFive: getFollowersLastFive,
+    getViewerCount: getViewerCount,
+    getSubscribers: getSubscribers,
+    getSubscribersCount: getSubscribersCount,
+    getSubscribersLast: getSubscribersLast,
+    getSubscribersLastFive: getSubscribersLastFive,
+    getStreamUpTime: getStreamUpTime,
+    createClip: createClip,
+    sendTwitchMessage: sendTwitchMessage
 };

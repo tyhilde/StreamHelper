@@ -1,4 +1,5 @@
 var utils = require('../utils');
+const {ClientAccessToken} = require('../../secrets/credentials');
 
 // TODO: Replace the accessToken with credentials.accessToken
 // Test calling util functions
@@ -6,54 +7,59 @@ var utils = require('../utils');
 //     console.log('userId res', res);
 // })
 
-// utils.getUserName('lhus3ijsnbqxatz1jk19gtedrxv5wt', (res) => {
+// utils.getUserName(ClientAccessToken, (res) => {
 //     console.log('userName res', res);
 // })
 
-// utils.isStreamLive('lhus3ijsnbqxatz1jk19gtedrxv5wt', (res) => {
+// utils.getUserId(ClientAccessToken, (res) => {
+//     console.log('userId res', res);
+// })
+
+// utils.isStreamLive(ClientAccessToken, (res) => {
 //     console.log('streamLive res', res);
 // })
 
-utils.getFollowers('lhus3ijsnbqxatz1jk19gtedrxv5wt', (res) => {
-    console.log('getFollowers res', res);
-});
+// utils.getFollowers(ClientAccessToken, (res) => {
+//     console.log('getFollowers res', res);
+// });
 
-// utils.getFollowersCount('lhus3ijsnbqxatz1jk19gtedrxv5wt', (res) => {
+// utils.getFollowersCount(ClientAccessToken, (res) => {
 //     console.log('followersCount res', res);
 // })
 
-// utils.getFollowersLast('lhus3ijsnbqxatz1jk19gtedrxv5wt', (res) => {
+// utils.getFollowersLast(ClientAccessToken, (res) => {
 //     console.log('getFollowersLast res', res);
 // })
 
-// utils.getFollowersLastFive('lhus3ijsnbqxatz1jk19gtedrxv5wt', (res) => {
+// utils.getFollowersLastFive(ClientAccessToken, (res) => {
 //     console.log('getFollowersLastFive res', res);
 // })
 
-// utils.getFollowers((res) => {
-//     console.log('followers res', res);
+// utils.getViewerCount(ClientAccessToken, (res) => {
+//     console.log('getViewerCount res', res);
 // })
 
-// utils.getViewers((res) => {
-//     console.log('viewers res', res);
+// utils.getSubscribers(ClientAccessToken, (res) => {
+//     console.log('getSubscribers res', res);
+//     console.log('getSubscribers res', res.subscriptions);
 // })
 
-// utils.getSubscribers((res) => {
-//     console.log('subscribers res', res);
+// utils.getSubscribersCount(ClientAccessToken, (res) => {
+//     console.log('getSubscribersCount res', res);
 // })
 
+// utils.getSubscribersLast(ClientAccessToken, (res) => {
+//     console.log('getSubscribersLast res', res);
+// })
 
+// utils.getSubscribersLastFive(ClientAccessToken, (res) => {
+//     console.log('getSubscribersLastFive res', res);
+// })
 
-// utils.createClip((res) => {
+// utils.createClip(ClientAccessToken, (res) => {
 //     console.log('createClip res', res);
 // })
 
 // utils.sendTwitchMessage('someMessage test', 'backsh00ter',  (res) => {
 //     console.log('sendTwitchMessage res', res);
 // })
-
-// var accTok = utils.isAcessTokenValid({accessToken: 'null'}, (res) => {
-//     console.log('what it does');
-// })
-
-// console.log('accTok', accTok);
