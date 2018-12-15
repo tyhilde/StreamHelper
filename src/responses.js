@@ -12,3 +12,19 @@ module.exports.streamLive = () =>
 
 module.exports.streamNotLive = () =>
     'Stream is NOT live';
+
+module.exports.followerCount = (count) => {
+
+}
+
+module.exports.noFollowers = () => {
+
+}
+
+module.exports.lastFollower = (follower) => {
+
+}
+
+module.exports.lastXFollowers = (followers) => {
+    // takes array of followers and joins into string, adding "and" before last one
+}

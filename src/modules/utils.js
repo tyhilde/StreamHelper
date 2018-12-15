@@ -149,13 +149,13 @@ function getFollowersCount(accessToken, callback) {
     });
 }
 
-function getFollowersLast(accessToken, callback) {
+function getFollowersLast(accessToken, callback) { // TODO: Add defensiveness in case 0 followers
     getFollowers(accessToken, (followers) => {
         callback(followers.follows[0].user.display_name);
     });
 }
 
-function getFollowersLastFive(accessToken, callback) {
+function getFollowersLastFive(accessToken, callback) { //TODO: Add defensiveness in case 0 followers and cehck waht response would look like
     getFollowers(accessToken, (followers) => {
         const lastFiveFollowers = followers.follows.slice(0, 5).map(followers => {
             return followers.user.display_name;
