@@ -3,20 +3,17 @@ const {ClientAccessToken} = require('../../secrets/credentials');
 
 // TODO: Replace the accessToken with credentials.accessToken
 // Test calling util functions
-// utils.getUserId((res) => {
-//     console.log('userId res', res);
-// })
 
-// utils.getUserName(ClientAccessToken, (res) => {
-//     console.log('userName res', res);
-// })
-
-// utils.getUserId(ClientAccessToken, (res) => {
-//     console.log('userId res', res);
+// utils.getUser(ClientAccessToken, (res) => {
+//     console.log('getuser res', res);
 // })
 
 // utils.isStreamLive(ClientAccessToken, (res) => {
 //     console.log('streamLive res', res);
+// })
+
+// utils.getStreamUpTime(ClientAccessToken, (res) => {
+//     console.log('getStreamupTime res', res);
 // })
 
 // utils.getFollowers(ClientAccessToken, (res) => {

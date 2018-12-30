@@ -8,12 +8,7 @@ const accessToken = 'testAccessToken';
 const userName = 'test_user';
 const userId = '123456789';
 
-const userNameNock = nock('https://api.twitch.tv')
-    .persist()
-    .get('/kraken?oauth_token=' + accessToken + '&client_id=' + TwitchAppClientId)
-    .reply(200, {token: {user_name: userName}});
-
-const userIdNock = nock('https://api.twitch.tv')
+const userNock = nock('https://api.twitch.tv')
     .persist()
     .get('/helix/users')
     .reply(200, {data: [{id: userId, display_name: userName}]});
@@ -35,18 +30,9 @@ describe('isAccessTokenValid', () => {
     })
 })
 
-describe('getUserName', () => {
-    it('returns the userName', (done) => {
-        utils.getUserName(accessToken, (res) => {
-            assert.equal(res, 'test_user');
-            done();
-        });
-    });
-});
-
-describe('getUserId', () => {
+describe('getUser', () => {
     it('returns the userId', (done) => {
-        utils.getUserId(accessToken, (res) => {
+        utils.getUser(accessToken, (res) => {
             assert.deepEqual(res, {userId: userId, userName: userName});
             done();
         });
@@ -56,8 +42,8 @@ describe('getUserId', () => {
 describe('isStreamLive', () => {
     it('returns true when it is live', (done) => {
         nock('https://api.twitch.tv')
-            .get(`/kraken/streams/${userName}?client_id=${TwitchAppClientId}`)
-            .reply(200, {stream: 'info'});
+            .get(`/helix/streams?user_id=${userId}`)
+            .reply(200, {data: [{id: 1234, user_id: 'user123'}]});
 
         utils.isStreamLive(accessToken, (res) => {
             assert.equal(res, true);
@@ -67,8 +53,8 @@ describe('isStreamLive', () => {
 
     it('returns false when it is not live', (done) => {
         nock('https://api.twitch.tv')
-            .get(`/kraken/streams/${userName}?client_id=${TwitchAppClientId}`)
-            .reply(200, {stream: null});
+            .get(`/helix/streams?user_id=${userId}`)
+            .reply(200, {data: []});
 
         utils.isStreamLive(accessToken, (res) => {
             assert.equal(res, false);
@@ -80,8 +66,8 @@ describe('isStreamLive', () => {
 describe('getStreamUpTime', () => {
     it('returns STREAM_OFFLINE if stream isnt up', (done) => {
         nock('https://api.twitch.tv')
-            .get(`/kraken/streams/${userName}?client_id=${TwitchAppClientId}`)
-            .reply(200, {stream: null});
+            .get(`/helix/streams?user_id=${userId}`)
+            .reply(200, {data: []});
 
         utils.getStreamUpTime(accessToken, (res) => {
             assert.equal(res, 'STREAM_OFFLINE');
@@ -91,8 +77,8 @@ describe('getStreamUpTime', () => {
 
     it('returns the stream up time', (done) => {
         nock('https://api.twitch.tv')
-            .get(`/kraken/streams/${userName}?client_id=${TwitchAppClientId}`)
-            .reply(200, {stream: {created_at: "2018-12-13T05:30:00Z"}});
+            .get(`/helix/streams?user_id=${userId}`)
+            .reply(200, {data: [{started_at: "2018-12-13T05:30:00Z"}]});
 
         utils.getStreamUpTime(accessToken, (res) => {
             const startDate = new Date("2018-12-13T05:30:00Z");
@@ -111,22 +97,26 @@ describe('getStreamUpTime', () => {
 
 describe('followers', () => {
     const followerResponse = {
-        _total: 6,
-        _links: {},
-        follows: [
-            { user: { display_name: 'follower1' }},
-            { user: { display_name: 'follower2' }},
-            { user: { display_name: 'follower3' }},
-            { user: { display_name: 'follower4' }},
-            { user: { display_name: 'follower5' }},
-            { user: { display_name: 'follower6' }}
+        total: 6,
+        data: [
+            { from_name: 'follower1' },
+            { from_name: 'follower2' },
+            { from_name: 'follower3' },
+            { from_name: 'follower4' },
+            { from_name: 'follower5' },
+            { from_name: 'follower6' }
         ]
+    };
+
+    const noFollowersResponse = {
+        total: 0,
+        data: []
     };
     
     describe('getFollowers', () => {
         it('returns object containing followers', (done) => {
             const followersNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/follows?oauth_token=${accessToken}`)
+                .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
 
             utils.getFollowers(accessToken, (res) => {
@@ -139,11 +129,11 @@ describe('followers', () => {
     describe('getFollowersCount', () => {
         it('returns the count of followers', (done) => {
             const followersNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/follows?oauth_token=${accessToken}`)
+                .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
             
             utils.getFollowersCount(accessToken, (res) => {
-                assert.equal(res, followerResponse._total);
+                assert.equal(res, followerResponse.total);
                 done();
             });
         });
@@ -152,11 +142,22 @@ describe('followers', () => {
     describe('getFollowersLast', () => {
         it('returns the last follower', (done) => {
             const followersNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/follows?oauth_token=${accessToken}`)
+                .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
             
             utils.getFollowersLast(accessToken, (res) => {
-                assert.equal(res, followerResponse.follows[0].user.display_name);
+                assert.equal(res, followerResponse.data[0].from_name);
+                done();
+            });
+        });
+
+        it('returns the NO_FOLLOWERS if there are none', (done) => {
+            const followersNock = nock('https://api.twitch.tv')
+                .get(`/helix/users/follows?to_id=${userId}`)
+                .reply(200, noFollowersResponse);
+            
+            utils.getFollowersLast(accessToken, (res) => {
+                assert.equal(res, 'NO_FOLLOWERS');
                 done();
             });
         });
@@ -165,7 +166,7 @@ describe('followers', () => {
     describe('getFollowersLastFive', () => {
        it('returns an array of the last five followers', (done) => {
             const followersNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/follows?oauth_token=${accessToken}`)
+                .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
         
             utils.getFollowersLastFive(accessToken, (res) => {
@@ -176,20 +177,30 @@ describe('followers', () => {
 
         it('returns an array of the last two followers if there are only 2', (done) => {
             const followerResponseTwo = {
-                _total: 2,
-                _links: {},
-                follows: [
-                    { user: { display_name: 'follower1' }},
-                    { user: { display_name: 'follower2' }}
+                total: 2,
+                data: [
+                    { from_name: 'follower1' },
+                    { from_name: 'follower2' }
                 ]
             };
             
             nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/follows?oauth_token=${accessToken}`)
+                .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponseTwo);
 
             utils.getFollowersLastFive(accessToken, (res) => {
                 assert.deepEqual(res, ['follower1', 'follower2']);
+                done();
+            });
+        });
+
+        it('returns the NO_FOLLOWERS if there are none', (done) => {
+            const followersNock = nock('https://api.twitch.tv')
+                .get(`/helix/users/follows?to_id=${userId}`)
+                .reply(200, noFollowersResponse);
+            
+            utils.getFollowersLastFive(accessToken, (res) => {
+                assert.equal(res, 'NO_FOLLOWERS');
                 done();
             });
         });
@@ -200,28 +211,30 @@ describe('viewers', () => {
     describe('getViewerCount', () => {
         it('returns the count of viewers when stream is live', (done) => {
             const viewerResponse = {
-                stream: {
-                    viewers: 50
-                }
+                data: [
+                    {
+                        viewer_count: 50
+                    }
+                ]
             };
 
             const viewersNock = nock('https://api.twitch.tv')
-                .get(`/kraken/streams/${userName}?oauth_token=${accessToken}`)
+                .get(`/helix/streams?user_id=${userId}`)
                 .reply(200, viewerResponse);
 
             utils.getViewerCount(accessToken, (res) => {
-                assert.equal(res, viewerResponse.stream.viewers);
+                assert.equal(res, viewerResponse.data[0].viewer_count);
                 done();
             });
         });
 
         it('returns 0 when there are no viewers', (done) => {
             const viewerResponse = {
-                stream: null
+                data: []
             };
 
             const viewersNock = nock('https://api.twitch.tv')
-                .get(`/kraken/streams/${userName}?oauth_token=${accessToken}`)
+                .get(`/helix/streams?user_id=${userId}`)
                 .reply(200, viewerResponse);
 
             utils.getViewerCount(accessToken, (res) => {

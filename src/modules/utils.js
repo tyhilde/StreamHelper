@@ -2,7 +2,6 @@ const https = require('https');
 const tmi = require('tmi.js');
 
 const {
-    TwitchAppClientId,
     TwitchBotPassword
 } = require('../secrets/credentials');
 
@@ -11,17 +10,12 @@ function isAccessTokenValid(accessToken) {
 }
 
 function getPath({path, userName, userId, accessToken}) {
-    const paths = {
-        userId: `/helix/users`,
-        basicInfo: `/kraken/channels/${userName}?oauth_token=${accessToken}`,
-        followers: `/kraken/channels/${userName}/follows?oauth_token=${accessToken}`,
-        viewers: '/kraken/streams/' + userName + '?oauth_token=' + accessToken,
-        subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc",
-        userName: '/kraken?oauth_token=' + accessToken + '&client_id=' + TwitchAppClientId,
-        live: `/kraken/streams/${userName}?client_id=${TwitchAppClientId}`,
-        createClip: '/helix/clips?broadcaster_id=' + userId,
-        default: '/kraken/channels/' + userName + '?oauth_token=' + accessToken,
-        newLive: '/helix/users?login=backsh00ter'
+    const paths = { // using helix api
+        user: `/helix/users`,
+        stream: `/helix/streams?user_id=${userId}`,
+        followers: `/helix/users/follows?to_id=${userId}`,
+        subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Update to helix once added to API
+        createClip: `/helix/clips?broadcaster_id=${userId}`,
     };
 
     return paths[path];
@@ -62,20 +56,9 @@ function fetchJson({endpoint, method, accessToken, userName, userId}, callback) 
     req.end();
 }
 
-function getUserName(accessToken, callback) {
+function getUser(accessToken, callback) {
     fetchJson({
-        endpoint: 'userName',
-        method: 'GET',
-        accessToken
-    }, (res) => {
-        const userName = res.token.user_name;
-        callback(userName);
-    });  
-}
-
-function getUserId(accessToken, callback) {
-    fetchJson({
-        endpoint: 'userId',
+        endpoint: 'user',
         method: 'GET',
         accessToken
     }, (res) => {
@@ -83,34 +66,34 @@ function getUserId(accessToken, callback) {
             userId: res.data[0].id,
             userName: res.data[0].display_name
         });
-    });
+    });  
 }
 
 function isStreamLive(accessToken, callback) {
-    getUserName(accessToken, (user) => {
+    getUser(accessToken, (user) => {
         fetchJson({
-            endpoint: 'live',
+            endpoint: 'stream',
             method: 'GET',
             accessToken,
-            userName: user
+            userId: user.userId
         }, (res) => {
-            const isLive = !!(res.stream);
+            const isLive = !!(res.data[0]);
             callback(isLive);
         });
     });
 }
 
 function getStreamUpTime(accessToken, callback) {
-    getUserName(accessToken, (user) => {
+    getUser(accessToken, (user) => {
         fetchJson({
-            endpoint: 'live',
+            endpoint: 'stream',
             method: 'GET',
             accessToken,
-            userName: user
+            userId: user.userId
         }, (res) => {
-            const streamIsLive = !!(res.stream);
+            const streamIsLive = !!(res.data[0]);
             if(streamIsLive) {
-                const streamStart = res.stream.created_at;
+                const streamStart = res.data[0].started_at;
                 const startDate = new Date(streamStart);
                 const currentDate = new Date();
                 
@@ -131,12 +114,12 @@ function getStreamUpTime(accessToken, callback) {
 }
 
 function getFollowers(accessToken, callback) {
-    getUserName(accessToken, (user) => {
+    getUser(accessToken, (user) => {
         fetchJson({
             endpoint: 'followers',
             method: 'GET',
             accessToken,
-            userName: user
+            userId: user.userId
         }, (res) => {
             callback(res);
         });
@@ -145,22 +128,23 @@ function getFollowers(accessToken, callback) {
 
 function getFollowersCount(accessToken, callback) {
     getFollowers(accessToken, (followers) => {
-        callback(followers._total);
+        callback(followers.total);
     });
 }
 
-function getFollowersLast(accessToken, callback) { // TODO: Add defensiveness in case 0 followers
+function getFollowersLast(accessToken, callback) {
     getFollowers(accessToken, (followers) => {
-        callback(followers.follows[0].user.display_name);
+        const follower = followers.total === 0 ? 'NO_FOLLOWERS' : followers.data[0].from_name;
+        callback(follower);
     });
 }
 
-function getFollowersLastFive(accessToken, callback) { //TODO: Add defensiveness in case 0 followers and cehck waht response would look like
+function getFollowersLastFive(accessToken, callback) {
     getFollowers(accessToken, (followers) => {
-        const lastFiveFollowers = followers.follows.slice(0, 5).map(followers => {
-            return followers.user.display_name;
+        const lastFiveFollowers = followers.total === 0 ? 'NO_FOLLOWERS' : followers.data.slice(0, 5).map(followers => {
+            return followers.from_name;
         });
-
+ 
         callback(lastFiveFollowers); 
         //TODO: index file will handle the array.join for output speech, which will pass the array to the responses file
         // for the correct response based on 0, 1, 2-5 followers
@@ -168,26 +152,26 @@ function getFollowersLastFive(accessToken, callback) { //TODO: Add defensiveness
 }
 
 function getViewerCount(accessToken, callback) {
-    getUserName(accessToken, (user) => {
+    getUser(accessToken, (user) => {
         fetchJson({
-            endpoint: 'viewers',
+            endpoint: 'stream',
             method: 'GET',
             accessToken,
-            userName: user
+            userId: user.userId
         }, (res) => {
-            const count = res.stream ? res.stream.viewers : 0;
+            const count = res.data[0] ? res.data[0].viewer_count : 0;
             callback(count);
         });
     });
 }
 
 function getSubscribers(accessToken, callback) {
-    getUserName(accessToken, (user) => {
+    getUser(accessToken, (user) => {
         fetchJson({
             endpoint: 'subscribers',
             method: 'GET',
             accessToken,
-            userName: user
+            userName: user.userName
         }, (res) => {
             callback(res);
         });
@@ -229,7 +213,7 @@ function getSubscribersLastFive(accessToken, callback) {
 }
 
 function createClip(accessToken, callback) {
-    getUserId(accessToken, (user) => {
+    getUser(accessToken, (user) => {
         fetchJson({
             endpoint: 'createClip',
             method: 'POST',
@@ -278,8 +262,7 @@ function sendTwitchMessage(clipUrl, userName, callback) {
 module.exports = {
     isStreamLive: isStreamLive,
     isAccessTokenValid: isAccessTokenValid,
-    getUserId: getUserId,
-    getUserName: getUserName,
+    getUser: getUser,
     getFollowers: getFollowers,
     getFollowersCount: getFollowersCount,
     getFollowersLast: getFollowersLast,
