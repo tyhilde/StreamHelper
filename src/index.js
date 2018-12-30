@@ -4,7 +4,13 @@ const {
     isAccessTokenValid,
     isStreamLive,
     getFollowersCount,
-    getFollowersLast
+    getFollowersLast,
+    getFollowersLastFive,
+    getViewerCount,
+    getSubscribersCount,
+    getSubscribersLast,
+    getSubscribersLastFive,
+    createClip
 } = require('./modules/utils');
 const {
     AlexaAppId,
@@ -51,7 +57,7 @@ const handlers = {
     'getLastFollower': function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
             getFollowersLast(this.event.session.user.accessToken, (follower) => {
-                follower === 'NO_FOLLOWERS' ? // FINISH UTIL TODO TO CHECK FOR 0 followers
+                follower === 'NO_FOLLOWERS' ?
                     this.emit(':tell', responses.noFollowers()) :
                     this.emit(':tellWithCard', responses.lastFollower(follower), 'Followers', 'Last follower: ' + follower);
             });
@@ -63,13 +69,55 @@ const handlers = {
     'getLastFiveFollowers': function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
             getFollowersLastFive(this.event.session.user.accessToken, (followers) => {
-                followers === 'NO_FOLLOWERS' ? // FINISH UTIL TODO...
+                followers === 'NO_FOLLOWERS' ?
                     this.emit(':tell', responses.noFollowers()) :
-                    this.emit(':tellWithCard', responses.lastXFollowers(followers), 'Followers', 'Last follower: ' + follower);
+                    this.emit(':tellWithCard', responses.lastXFollowers(followers), 'Followers', 'Followers: ' + followers);
             });
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
-    }
+    },
+    'getViewerCount': function () {
+        if(isAccessTokenValid(this.event.session.user.accessToken)) {
+            getViewerCount(this.event.session.user.accessToken, (count) => {
+                this.emit(':tellWithCard', responses.viewerCount(count), 'Viewers', 'Viewers: ' + count);
+            });
+        }
+        else {
+            this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
+        }
+    },
+    'getSubscriberCount': function () {
+        if(isAccessTokenValid(this.event.session.user.accessToken)) {
+            getSubscribersCount(this.event.session.user.accessToken, (count) => {
+                this.emit(':tellWithCard', responses.subscriberCount(count), 'Subscribers', 'Subscribers: ' + count);
+            });
+        }
+        else {
+            this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
+        }
+    },
+    'getLastSubscriber': function () {
+        if(isAccessTokenValid(this.event.session.user.accessToken)) {
+            getSubscribersLast(this.event.session.user.accessToken, (subscriber) => {
+                this.emit(':tellWithCard', responses.lastSubscriber(subscriber), 'Subscribers', 'Last subscriber: ' + subscriber);
+            });
+        }
+        else {
+            this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
+        }
+    },
+    'getLastFiveSubscribers': function () {
+        if(isAccessTokenValid(this.event.session.user.accessToken)) {
+            getSubscribersLastFive(this.event.session.user.accessToken, (subscribers) => {
+                this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Ssubscribers: ' + subscribers);
+            });
+        }
+        else {
+            this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
+        }
+    },
+    //getstreamuptime, createclip
+    // genereic intents, help, cancenl, stop, unhanlded,catchall (revist the last two)
 }
