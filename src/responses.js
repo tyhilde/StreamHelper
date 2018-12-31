@@ -113,7 +113,7 @@ module.exports.lastXSubscribers = (subscribers) => {
 }
 
 module.exports.clipStreamOffline = () =>
-    'Sorry I can\'t create a clip while your channel is offline.';
+    'Sorry, I can\'t create a clip while your channel is offline.';
 
 module.exports.clipCreated = (clip) => 
     `I created a clip with the id of ${clip.id}.`;

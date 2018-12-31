@@ -7,7 +7,7 @@
     "test": "mocha ./tests/*.tests.js",
     "test-utils": "mocha ./modules/tests/*.tests.js",
     "lint": "eslint ./**/*.js",
-    "postinstall": "npm i alexa-sdk seedrandom --prefix dist",
+    "postinstall": "npm i alexa-sdk tmi.js --prefix dist",
     "deploy": "gulp deploy",
     "debug-mocha": "iron-node node_modules/mocha/bin/_mocha ./tests/*.tests.js"
   },
@@ -29,8 +29,7 @@
   },
   "homepage": "https://github.com/tyhilde/StreamHelper#readme",
   "dependencies": {
-    "alexa-sdk": "^1.0.3",
-    "seedrandom": "^2.4.2",
+    "alexa-sdk": "^1.0.25",
     "tmi.js": "^1.2.1"
   },
   "devDependencies": {
@@ -44,6 +43,7 @@
     "gulp-replace-task": "^0.11.0",
     "gulp-zip": "^3.2.0",
     "mocha": "^2.5.3",
+    "natives": "^1.1.6",
     "nock": "^10.0.1",
     "node-aws-lambda": "^0.1.8",
     "run-sequence": "^1.2.2"

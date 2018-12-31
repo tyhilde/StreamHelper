@@ -44,7 +44,7 @@ gulp.task('js', function() {
 });
 
 gulp.task('zip', function() {
-  return gulp.src(['dist/**/*'])
+  return gulp.src('dist/**/*', {nodir: true})
     .pipe(zip('dist.zip'))
     .pipe(gulp.dest('./dist'));
 });
