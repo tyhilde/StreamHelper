@@ -68,8 +68,8 @@ module.exports.subscriberCount = (count) => {
         return 'You have zero subscribers, you are not a Twitch partner or affiliate.';
     }
     else {
-        if(count === 1) {
-            return `You currently have one subscriber.`;
+        if(count === 1) { // Counts self as a subscriber
+            return `You currently do not have any subscribers.`;
         }
         else {
             return `You currently have ${count} subscribers.`;
