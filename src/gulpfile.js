@@ -37,8 +37,8 @@ gulp.task('js', function() {
   return gulp.src([
     'index.js',
     'responses.js',
-    // 'handlers/**/*',
     'modules/**/*',
+    'secrets/credentials.js'
   ], { base: './' })
     .pipe(gulp.dest('dist/'));
 });

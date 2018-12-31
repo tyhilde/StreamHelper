@@ -1,7 +1,7 @@
 // Used to test calling the util functions
 
-var utils = require('../utils');
-const {ClientAccessToken} = require('../../secrets/credentials');
+var utils = require('../modules/utils');
+const {ClientAccessToken} = require('../secrets/credentials');
 
 // utils.getUser(ClientAccessToken, (res) => {
 //     console.log('getuser res', res);
