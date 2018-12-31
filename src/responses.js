@@ -1,20 +1,37 @@
 'use strict';
 
-// TODO: Make sure these are the correct strings
 module.exports.welcome = () =>
     'Welcome to the Stream Helper Skill. You can ask me questions about your viewers, followers or subscribers. What would you like to know?';
 
+module.exports.goodbye = () =>
+    'Goodbye!';
+
+module.exports.helpMessage = () =>
+    'You can ask me questions about your followers, viewers, or subscribers. You can also create a clip of your stream. What can I help you with?';
+
+module.exports.helpMessageReprompt = () =>
+    'You can ask me questions about your followers, viewers, or subscribers or you can create a clip. Just say something like who was my last subscriber or create a clip. What can I help you with?';
+
 module.exports.loginNeeded = () =>
-    'Need to login';
+    'To start using this skill please use the companion app to authenticate with your Twitch account. And then try again.';
 
 module.exports.streamLive = () =>
-    'Stream is live';
+    'Your stream is currently <phoneme alphabet="ipa" ph="l aɪ v">live</phoneme>.';
 
 module.exports.streamNotLive = () =>
-    'Stream is NOT live';
+    'Your stream is currently offline.'
+
+module.exports.streamUpTime = (uptime) => {
+    if (uptime.hours >= 23 && uptime.minutes >= 59) {
+        return 'Your stream has been <phoneme alphabet="ipa" ph="l aɪ v">live</phoneme> for more than 24 hours.';
+    }
+    else {
+        return `Your stream has been <phoneme alphabet="ipa" ph="l aɪ v">live</phoneme> for ${uptime.hours} hours and ${uptime.minutes} minutes.`;
+    }
+}
 
 module.exports.noFollowers = () =>
-    'There are no followers.';
+    'You don\'t have any followers.';
 
 module.exports.followerCount = (count) =>
     `You have ${count} followers.`;
@@ -94,3 +111,12 @@ module.exports.lastXSubscribers = (subscribers) => {
         }
     }
 }
+
+module.exports.clipStreamOffline = () =>
+    'Sorry I can\'t create a clip while your channel is offline.';
+
+module.exports.clipCreated = (clip) => 
+    `I created a clip with the id of ${clip.id}.`;
+
+module.exports.catchAll = () =>
+    'I\'m sorry I didn\'t understand that. Try asking again.';

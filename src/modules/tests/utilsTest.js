@@ -1,8 +1,7 @@
+// Used to test calling the util functions
+
 var utils = require('../utils');
 const {ClientAccessToken} = require('../../secrets/credentials');
-
-// TODO: Replace the accessToken with credentials.accessToken
-// Test calling util functions
 
 // utils.getUser(ClientAccessToken, (res) => {
 //     console.log('getuser res', res);

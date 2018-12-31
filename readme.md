@@ -15,8 +15,6 @@ Util functions are used to get the relevant data from the Twitch API.
 ## Testing
 Can test the util functions locally.
 
-TODO: Testing the actual Alexa Skill intents
-TODO: Setup Lambda tests, etc
 
 
 ## IN PROGRESS 

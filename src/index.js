@@ -3,6 +3,7 @@ const responses = require('./responses');
 const {
     isAccessTokenValid,
     isStreamLive,
+    getStreamUpTime,
     getFollowersCount,
     getFollowersLast,
     getFollowersLastFive,
@@ -10,11 +11,12 @@ const {
     getSubscribersCount,
     getSubscribersLast,
     getSubscribersLastFive,
-    createClip
+    createClip,
+    sendTwitchMessage
 } = require('./modules/utils');
+
 const {
-    AlexaAppId,
-    TwitchBotPassword
+    AlexaAppId
 } = require('./secrets/credentials');
 
 
@@ -28,7 +30,7 @@ exports.handler = function (event, context) {
 
 const handlers = {
     'LaunchRequest': function() {
-        this.emit(':ask', responses.welcome());
+        this.emit(':ask', responses.welcome(), responses.helpMessageReprompt());
     },
     'isStreamLive': function() {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
@@ -36,6 +38,18 @@ const handlers = {
                 isLive ?
                     this.emit(':tell', responses.streamLive()) :
                     this.emit(':tell', responses.streamNotLive());
+            });
+        }
+        else {
+            this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
+        }
+    },
+    'getStreamUpTime': function() {
+        if(isAccessTokenValid(this.event.session.user.accessToken)) {
+            getStreamUpTime(this.event.session.user.accessToken, (uptime) => {
+                uptime === 'STREAM_OFFLINE' ?
+                    this.emit(':tell', responses.streamNotLive()) :
+                    this.emit(':tellWithCard', responses.streamUpTime(uptime), 'Uptime', uptime.hours + 'hrs ' + uptime.minutes + 'mins');
             });
         }
         else {
@@ -111,13 +125,45 @@ const handlers = {
     'getLastFiveSubscribers': function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
             getSubscribersLastFive(this.event.session.user.accessToken, (subscribers) => {
-                this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Ssubscribers: ' + subscribers);
+                this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Subscribers: ' + subscribers);
             });
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    //getstreamuptime, createclip
-    // genereic intents, help, cancenl, stop, unhanlded,catchall (revist the last two)
+    'createClip': function () {
+        if(isAccessTokenValid(this.event.session.user.accessToken)) {
+            createClip(this.event.session.user.accessToken, (res) => {
+                if (res.clip === 'STREAM_OFFLINE') {
+                    this.emit(':tell', responses.clipStreamOffline());
+                }
+                else {
+                    var clipUrl = res.clip.edit_url;
+                    var clipUrlTrimmed = clipUrl.substring(0, clipUrl.length-5);
+                    sendTwitchMessage(clipUrlTrimmed, res.userName, (response) => {
+                        this.emit(':tellWithCard', responses.clipCreated(res.clip), 'Clip Created', 'Clip URL: ' + res.clip.edit_url);
+                    })
+                }   
+            });
+        }
+        else {
+            this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
+        }
+    },
+    'AMAZON.CancelIntent': function () {
+        this.emit(':tell', responses.goodbye());
+    },
+    'AMAZON.HelpIntent': function () {
+        this.emit(':ask', responses.helpMessage(), responses.helpMessageReprompt());
+    },
+    'AMAZON.StopIntent': function () {
+        this.emit(':tell', responses.goodbye());
+    },
+    'CatchAll': function () {
+        this.emit(':ask', responses.catchAll(), responses.helpMessageReprompt());
+    },
+    'Unhandled': function () {
+        this.emit(':ask', responses.catchAll(), responses.helpMessageReprompt());
+    }
 }

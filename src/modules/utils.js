@@ -91,6 +91,7 @@ function getStreamUpTime(accessToken, callback) {
             accessToken,
             userId: user.userId
         }, (res) => {
+            console.log('res', res);
             const streamIsLive = !!(res.data[0]);
             if(streamIsLive) {
                 const streamStart = res.data[0].started_at;
@@ -145,9 +146,7 @@ function getFollowersLastFive(accessToken, callback) {
             return followers.from_name;
         });
  
-        callback(lastFiveFollowers); 
-        //TODO: index file will handle the array.join for output speech, which will pass the array to the responses file
-        // for the correct response based on 0, 1, 2-5 followers
+        callback(lastFiveFollowers);
     });
 }
 
@@ -221,8 +220,12 @@ function createClip(accessToken, callback) {
             userId: user.userId
         }, (res) => {
             const clip = res.data ? res.data[0] : "STREAM_OFFLINE";
-            
-            callback(clip);
+            const val = {
+                userName: user.userName,
+                clip
+            }
+
+            callback(val);
         });
     })
 }
@@ -256,8 +259,6 @@ function sendTwitchMessage(clipUrl, userName, callback) {
         callback("Message_Failed_To_Send");
     });
 }
-
-
 
 module.exports = {
     isStreamLive: isStreamLive,

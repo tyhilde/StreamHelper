@@ -5,8 +5,11 @@ const context = require('aws-lambda-mock-context');
 
 const {TwitchAppClientId} = require('../secrets/credentials');
 
-
 const sessionStartIntent = require('./event-samples/new-session/session-start.intent');
+const sessionCancelIntent = require('./event-samples/new-session/session-cancel.intent');
+const sessionStopIntent = require('./event-samples/new-session/session-stop.intent');
+const sessionHelpIntent = require('./event-samples/new-session/session-help.intent');
+const sessionCatchAllIntent = require('./event-samples/new-session/session-catchall.intent');
 const streamIsLiveIntent = require('./event-samples/isStreamLive/streamLive.intent');
 const loginNeededIntent = require('./event-samples/isStreamLive/loginNeeded.intent');
 const getFollowersCountIntent = require('./event-samples/followers/getFollowersCount.intent');
@@ -16,12 +19,18 @@ const getViewerCountIntent = require('./event-samples/getViewerCount.intent');
 const getSubscriberCountIntent = require('./event-samples/subscribers/getSubscriberCount.intent');
 const getLastSubscriberIntent = require('./event-samples/subscribers/getLastSubscriber.intent');
 const getLastFiveSubscribersIntent = require('./event-samples/subscribers/getLastFiveSubscribers.intent');
+const getStreamUpTimeIntent = require('./event-samples/getStreamUpTime.intent');
+const createClipIntent = require('./event-samples/createClip/createClip.intent');
 
 const {
     welcome,
+    goodbye,
+    helpMessage,
+    catchAll,
     loginNeeded,
     streamLive,
     streamNotLive,
+    streamUpTime,
     followerCount,
     noFollowers,
     lastFollower,
@@ -29,7 +38,9 @@ const {
     viewerCount,
     subscriberCount,
     lastSubscriber,
-    lastXSubscribers
+    lastXSubscribers,
+    clipStreamOffline,
+    clipCreated
 } = require('../responses');
 
 const sanitise = text => text.replace(/\n/g, '');
@@ -49,14 +60,7 @@ const runIntent = intent => new Promise(res => {
       //  console.log(obj);
       res({
         endOfSession: obj.response.shouldEndSession,
-        outputSpeech: getOutputSpeech(obj),
-        // gameState: getAttribute(obj, 'STATE'),
-        // playerCount: getAttribute(obj, 'playerCount'),
-        // players: getAttribute(obj, 'players'),
-        // activePlayer: getAttribute(obj, 'activePlayer'),
-        // startTime: getAttribute(obj, 'startTime'),
-        // currentAnswer: getAttribute(obj, 'currentAnswer'),
-        // previousResponse: getAttribute(obj, 'previousResponse'),
+        outputSpeech: getOutputSpeech(obj)
       });
     })
     .catch(err => {
@@ -64,9 +68,6 @@ const runIntent = intent => new Promise(res => {
     });
 });
 
-
-// TODO: Test each of the intents
-// use nock to mock the endpoints
 describe('intents', () => {
   const userName = 'test_user';
   const userId = 123456789;
@@ -76,7 +77,7 @@ describe('intents', () => {
     .get(`/helix/users`)
     .reply(200, {data: [{id: userId, display_name: userName}]});
   
-  describe('Alexa, start game', () => {
+  describe('LaunchRequest', () => {
       it('Welcomes users, asks what they\'d like to know', () =>
         runIntent(sessionStartIntent)
           .then(({ outputSpeech, endOfSession }) => {
@@ -84,6 +85,46 @@ describe('intents', () => {
             assert(!endOfSession);
           })
       );
+  });
+
+  describe('CancelIntent', () => {
+    it('Ends session and says goodbye', () =>
+      runIntent(sessionCancelIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+          assert.deepEqual(outputSpeech, sanitise(goodbye()));
+          assert(endOfSession);
+        })
+    );
+  });
+
+  describe('StopIntent', () => {
+    it('Ends session and says goodbye', () =>
+      runIntent(sessionStopIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+          assert.deepEqual(outputSpeech, sanitise(goodbye()));
+          assert(endOfSession);
+        })
+    );
+  });
+
+  describe('HelpIntent', () => {
+    it('tells users what they can say', () =>
+      runIntent(sessionHelpIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+          assert.deepEqual(outputSpeech, sanitise(helpMessage()));
+          assert(!endOfSession);
+        })
+    );
+  });
+
+  describe('CatchAll', () => {
+    it('says didnt understand what was said', () =>
+      runIntent(sessionCatchAllIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+          assert.deepEqual(outputSpeech, sanitise(catchAll()));
+          assert(!endOfSession);
+        })
+    );
   });
 
   describe('isStreamLive', () => {
@@ -118,6 +159,43 @@ describe('intents', () => {
       runIntent(streamIsLiveIntent)
         .then(({ outputSpeech, endOfSession }) => {
           assert.deepEqual(outputSpeech, sanitise(streamNotLive()));
+          assert(endOfSession);
+          done();
+        }) 
+    });
+  });
+
+  describe('getStreamUpTime', () => {
+    it('tells the user that the stream is not live', (done) => {
+      // mock stream live endpoint
+      nock('https://api.twitch.tv')
+        .get(`/helix/streams?user_id=${userId}`)
+        .reply(200, {data: []});
+
+      runIntent(getStreamUpTimeIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+          assert.deepEqual(outputSpeech, sanitise(streamNotLive()));
+          assert(endOfSession);
+          done();
+        }) 
+    });
+
+    it('tells the user the stream uptime', (done) => {
+      // mock stream live endpoint
+      nock('https://api.twitch.tv')
+        .get(`/helix/streams?user_id=${userId}`)
+        .reply(200, {data: [{started_at: "2018-12-13T05:30:00Z"}]});
+
+      runIntent(getStreamUpTimeIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+            const startDate = new Date("2018-12-13T05:30:00Z");
+            const currentDate = new Date();
+            const totalMins = Math.floor((currentDate - startDate) / (1000 * 60));
+            const uptime = {
+                minutes: totalMins % 60,
+                hours: Math.floor(totalMins / 60)
+            };
+          assert.deepEqual(outputSpeech, sanitise(streamUpTime(uptime)));
           assert(endOfSession);
           done();
         }) 
@@ -320,62 +398,89 @@ describe('intents', () => {
           });
       });
     });
+  
+    describe('getLastFiveSubscribers', () => {
+      it('tells the user the name of the one subscriber', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
+          .reply(200, {_total: 2, subscriptions:[{user: { display_name: 'user1'}}]});
+
+        runIntent(getLastFiveSubscribersIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastXSubscribers(['user1']));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user the name of the subscribers', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
+          .reply(200, {_total: 6, subscriptions:[{user: { display_name: 'user1'}}, {user: { display_name: 'user2'}}, {user: { display_name: 'user3'}}, {user: { display_name: 'user4'}}]});
+
+        runIntent(getLastFiveSubscribersIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastXSubscribers(['user1', 'user2', 'user3', 'user4']));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user they have zero subscribers', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
+          .reply(200, {_total: 1, subscriptions:[]});
+
+        runIntent(getLastFiveSubscribersIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastXSubscribers('NO_SUBSCRIBERS'));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user they have zero subscribers and are not parterned', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
+          .reply(200, {});
+
+        runIntent(getLastFiveSubscribersIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastXSubscribers('NOT_A_PARTNER'));
+            assert(endOfSession);
+            done();
+          });
+      });
+    });
   });
 
-  describe('getLastFiveSubscribers', () => {
-    it('tells the user the name of the one subscriber', (done) => {
+  describe('createClip', () => {
+    it('tells the user that the stream is offline', (done) => {
+      // mock stream live endpoint
       nock('https://api.twitch.tv')
-        .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-        .reply(200, {_total: 2, subscriptions:[{user: { display_name: 'user1'}}]});
-
-      runIntent(getLastFiveSubscribersIntent)
-        .then(({ outputSpeech, endOfSession }) => {
-          assert.deepEqual(outputSpeech, lastXSubscribers(['user1']));
-          assert(endOfSession);
-          done();
-        });
-    });
-
-    it('tells the user the name of the subscribers', (done) => {
-      nock('https://api.twitch.tv')
-        .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-        .reply(200, {_total: 6, subscriptions:[{user: { display_name: 'user1'}}, {user: { display_name: 'user2'}}, {user: { display_name: 'user3'}}, {user: { display_name: 'user4'}}]});
-
-      runIntent(getLastFiveSubscribersIntent)
-        .then(({ outputSpeech, endOfSession }) => {
-          assert.deepEqual(outputSpeech, lastXSubscribers(['user1', 'user2', 'user3', 'user4']));
-          assert(endOfSession);
-          done();
-        });
-    });
-
-    it('tells the user they have zero subscribers', (done) => {
-      nock('https://api.twitch.tv')
-        .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-        .reply(200, {_total: 1, subscriptions:[]});
-
-      runIntent(getLastFiveSubscribersIntent)
-        .then(({ outputSpeech, endOfSession }) => {
-          assert.deepEqual(outputSpeech, lastXSubscribers('NO_SUBSCRIBERS'));
-          assert(endOfSession);
-          done();
-        });
-    });
-
-    it('tells the user they have zero subscribers and are not parterned', (done) => {
-      nock('https://api.twitch.tv')
-        .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
+        .post(`/helix/clips?broadcaster_id=${userId}`)
         .reply(200, {});
 
-      runIntent(getLastFiveSubscribersIntent)
+      runIntent(createClipIntent)
         .then(({ outputSpeech, endOfSession }) => {
-          assert.deepEqual(outputSpeech, lastXSubscribers('NOT_A_PARTNER'));
+          assert.deepEqual(outputSpeech, sanitise(clipStreamOffline()));
           assert(endOfSession);
           done();
-        });
+        }) 
+    });
+
+    it('tells the user the clip has been created', (done) => {
+      // mock stream live endpoint
+      nock('https://api.twitch.tv')
+        .post(`/helix/clips?broadcaster_id=${userId}`)
+        .reply(200, {data: [{id: 'clipId', edit_url: 'clip_edit_url'}]});
+
+      runIntent(createClipIntent)
+        .then(({ outputSpeech, endOfSession }) => {
+          assert.deepEqual(outputSpeech, sanitise(clipCreated({id: 'clipId', edit_url: 'clip_edit_url'})));
+          assert(endOfSession);
+          done();
+        }) 
     });
   });
 });
-
-  // TODO: subscribers, clips, 
-// });

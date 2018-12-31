@@ -13,7 +13,6 @@ const userNock = nock('https://api.twitch.tv')
     .get('/helix/users')
     .reply(200, {data: [{id: userId, display_name: userName}]});
 
-// TODO: Later, test each of the util functions
 // On the async tests, need to call done() to mark end of async requests
 
 describe('isAccessTokenValid', () => {
@@ -442,7 +441,7 @@ describe('createClip', () => {
              .reply(200, createClipResponse);
      
          utils.createClip(accessToken, (res) => {
-             assert.deepEqual(res, createClipResponse.data[0]);
+             assert.deepEqual(res, {clip: createClipResponse.data[0], userName});
              done();
          });
     });
@@ -458,7 +457,7 @@ describe('createClip', () => {
              .reply(200, streamOfflineResponse);
      
          utils.createClip(accessToken, (res) => {
-             assert.deepEqual(res, 'STREAM_OFFLINE');
+             assert.deepEqual(res, {clip: 'STREAM_OFFLINE', userName});
              done();
          });
     });
