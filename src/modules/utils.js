@@ -1,5 +1,6 @@
 const https = require('https');
 const tmi = require('tmi.js');
+const fetch = require('node-fetch');
 
 const {
     TwitchBotPassword
@@ -9,20 +10,22 @@ function isAccessTokenValid(accessToken) {
     return !!(accessToken);
 }
 
-function getPath({path, userName, userId, accessToken}) {
+function getPath({path, userName, userId, accessToken, pageCursor}) {
     const paths = { // using helix api
         user: `/helix/users`,
         stream: `/helix/streams?user_id=${userId}`,
         followers: `/helix/users/follows?to_id=${userId}`,
         subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Update to helix once added to API
+        subscribersNew: `/helix/subscriptions?broadcaster_id=${userId}&first=100&after=${pageCursor}`, // TODO: Might need pass &user_id as well, &after={cursor} to get following pages
         createClip: `/helix/clips?broadcaster_id=${userId}`,
     };
 
     return paths[path];
 }
 
-function fetchJson({endpoint, method, accessToken, userName, userId}, callback) {
-    var path = getPath({path: endpoint, userName, userId, accessToken});
+// TODO: Try using just fetch instead (uses promises instead of callback)
+function fetchJson({endpoint, method, accessToken, userName, userId, pageCursor}, callback) {
+    var path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
 
     var options = {
         host: 'api.twitch.tv',
@@ -54,6 +57,59 @@ function fetchJson({endpoint, method, accessToken, userName, userId}, callback) 
         console.error(`problem with request: ${e.message}`);
     })
     req.end();
+}
+
+// TODO: This should allow everything else to be converted to async/await and simplify it
+// TODO: Before refactor double check that the intents will work with async/await
+async function newAsyncFetch({endpoint, method, accessToken, userName, userId, pageCursor}) {
+    const path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
+    const options = {
+        host: 'api.twitch.tv',
+        port: 443,
+        path: path,
+        method: method,
+        headers: {
+            Authorization: 'Bearer ' + accessToken
+        }
+    };
+    const absoluteUrl = 'https://api.twitch.tv' + path;
+
+    try {
+        const data = await fetch(absoluteUrl, options);
+        const jsonData = await data.json();
+    
+        return jsonData;
+    } catch(error) {
+        console.log('Error fetching: ', error);
+        return 'Error fetching'; // TODO: Better way to handle failures
+    }
+}
+
+async function getUserAsync(accessToken) {
+    const res = await newAsyncFetch({
+        endpoint: 'user',
+        method: 'GET',
+        accessToken
+    });
+
+    return {
+        userId: res.data[0].id,
+        userName: res.data[0].display_name
+    };
+}
+
+async function isStreamLiveAsync(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const res = await newAsyncFetch({
+        endpoint: 'stream',
+        method: 'GET',
+        accessToken,
+        userId: user.userId
+    });
+
+    console.log('res', res);
+    const isLive = !!(res.data[0]);
+    return isLive;
 }
 
 function getUser(accessToken, callback) {
@@ -177,6 +233,32 @@ function getSubscribers(accessToken, callback) {
     });
 }
 
+// TODO: Need to update the account linking and add more params
+// TODO: Verify what response looks like for zero subs - just returns empty array same shape
+// TODO: what response looks like for non partner/affiliate - just returns empty array same shape
+// TODO: getsubscribers count will need to use ?after=paginationCursor
+// TODO: getsubscribersLast should be able to use ?first=1 (to get last sub)
+// TODO: wait to here back on forum about returning in order
+// Getsubscribersnew func will return first page (up to 100)
+
+function getSubscribersNew(accessToken, pageCursor, callback) {
+    getUser(accessToken, (user) => {
+        fetchJson({
+            endpoint: 'subscribersNew',
+            method: 'GET',
+            accessToken,
+            userId: user.userId,
+            pageCursor
+        }, (res) => {
+            callback(res);
+        });
+    });
+}
+
+// function getSubscribersCountNew(accessToken, callback) {
+//     // TODO: Hit api multiple times w/ page # until data: [] 
+// }
+
 function getSubscribersCount(accessToken, callback) {
     getSubscribers(accessToken, (subscribers) => {
         const isPartnered = !!(subscribers._total);
@@ -262,6 +344,7 @@ function sendTwitchMessage(clipUrl, userName, callback) {
 
 module.exports = {
     isStreamLive: isStreamLive,
+    isStreamLiveAsync: isStreamLiveAsync,
     isAccessTokenValid: isAccessTokenValid,
     getUser: getUser,
     getFollowers: getFollowers,
@@ -270,6 +353,8 @@ module.exports = {
     getFollowersLastFive: getFollowersLastFive,
     getViewerCount: getViewerCount,
     getSubscribers: getSubscribers,
+    getSubscribersNew: getSubscribersNew,
+    // getSubscribersCountNew: getSubscribersCountNew,
     getSubscribersCount: getSubscribersCount,
     getSubscribersLast: getSubscribersLast,
     getSubscribersLastFive: getSubscribersLastFive,

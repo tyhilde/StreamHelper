@@ -1,8 +1,6 @@
 const assert = require('assert');
-const utils = require('../utils');
+const utils = require('../modules/utils');
 const nock = require('nock');
-
-const {TwitchAppClientId} = require('../../secrets/credentials');
 
 const accessToken = 'testAccessToken';
 const userName = 'test_user';
@@ -35,6 +33,30 @@ describe('getUser', () => {
             assert.deepEqual(res, {userId: userId, userName: userName});
             done();
         });
+    });
+});
+
+describe('isStreamLiveAsync', () => {
+    it('returns true when it is live', async (done) => {
+        nock('https://api.twitch.tv')
+            .get(`/helix/streams?user_id=${userId}`)
+            .reply(200, {data: [{id: 1234, user_id: 'user123'}]});
+
+        const res = await utils.isStreamLiveAsync(accessToken);
+
+        assert.equal(res, true);
+        done();
+    });
+
+    it('returns false when it is not live', async (done) => {
+        nock('https://api.twitch.tv')
+            .get(`/helix/streams?user_id=${userId}`)
+            .reply(200, {data: []});
+
+        const res = await utils.isStreamLiveAsync(accessToken);
+
+        assert.equal(res, false);
+        done();
     });
 });
 
@@ -421,6 +443,65 @@ describe('subscribers', () => {
                 assert.deepEqual(res, "NOT_A_PARTNER");
                 done();
             });
+        });
+    });
+});
+
+describe('subscribersNew', () => {
+    const subscriberResponse = {
+        data: [ 
+            {
+                broadcaster_id: 'broadcasterId1',
+                broadcaster_name: 'broadcasterName1',
+                is_gift: false,
+                plan_name: 'Channel Subscription',
+                tier: '1000',
+                user_id: 'userId1',
+                user_name: 'userName1'
+            },
+            {
+                broadcaster_id: 'broadcasterId1',
+                broadcaster_name: 'broadcasterName1',
+                is_gift: false,
+                plan_name: 'Channel Subscription',
+                tier: '1000',
+                user_id: 'userId2',
+                user_name: 'userName2'
+            },
+            { 
+                broadcaster_id: '32799121',
+                broadcaster_name: 'BackSH00TER',
+                is_gift: false,
+                plan_name: 'Channel Subscription (backsh00ter)',
+                tier: '1000',
+                user_id: '65406844',
+                user_name: 'Crusader_09'
+            }
+          ],
+        pagination: {
+            cursor: 'cursorId1'
+        }
+    };
+
+    it('returns object containing array of subscribers', (done) => {
+        const subscriberNock = nock('https://api.twitch.tv')
+            .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+            .reply(200, subscriberResponse);
+
+        utils.getSubscribersNew(accessToken, '', (res) => {
+            assert.deepEqual(res, subscriberResponse);
+            done();
+        });
+    });
+
+    it('returns correct object when empty array of subscribers', (done) => {
+        const subscriberNock = nock('https://api.twitch.tv')
+            .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+            .reply(200, {data: [],  pagination: {cursor: 'cursor1'}});
+
+        utils.getSubscribersNew(accessToken, '', (res) => {
+            assert.deepEqual(res, {data: [],  pagination: {cursor: 'cursor1'}});
+            done();
         });
     });
 });

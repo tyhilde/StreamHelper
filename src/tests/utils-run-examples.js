@@ -7,6 +7,15 @@ const {ClientAccessToken} = require('../secrets/credentials');
 //     console.log('getuser res', res);
 // })
 
+async function testFunc() {
+    // var res = await utils.getUser(ClientAccessToken);
+    // console.log('res', res);
+
+    var res = await utils.isStreamLiveAsync(ClientAccessToken);
+    console.log('streamLive res', res);
+};
+testFunc();
+
 // utils.isStreamLive(ClientAccessToken, (res) => {
 //     console.log('streamLive res', res);
 // })
@@ -36,8 +45,17 @@ const {ClientAccessToken} = require('../secrets/credentials');
 // })
 
 // utils.getSubscribers(ClientAccessToken, (res) => {
-//     console.log('getSubscribers res', res);
-//     console.log('getSubscribers res', res.subscriptions);
+//     console.log('old getSubscribers res', res);
+//     console.log('old getSubscribers res', res.subscriptions);
+// })
+
+// utils.getSubscribersNew(ClientAccessToken, '', (res) => {
+//     console.log('new getSubscribers res', res);
+//     // console.log('new getSubscribers res', res.data);
+// })
+
+// utils.getSubscribersCountNew(ClientAccessToken, (res) => {
+//     console.log('new getSubscribersCountNew res', res);
 // })
 
 // utils.getSubscribersCount(ClientAccessToken, (res) => {

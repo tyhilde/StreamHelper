@@ -3,6 +3,7 @@ const responses = require('./responses');
 const {
     isAccessTokenValid,
     isStreamLive,
+    isStreamLiveAsync,
     getStreamUpTime,
     getFollowersCount,
     getFollowersLast,
@@ -32,13 +33,13 @@ const handlers = {
     'LaunchRequest': function() {
         this.emit(':ask', responses.welcome(), responses.helpMessageReprompt());
     },
-    'isStreamLive': function() {
+    'isStreamLive': async function() {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            isStreamLive(this.event.session.user.accessToken, (isLive) => {
-                isLive ?
-                    this.emit(':tell', responses.streamLive()) :
-                    this.emit(':tell', responses.streamNotLive());
-            });
+            const isLive = await isStreamLiveAsync(this.event.session.user.accessToken);
+           
+            isLive ?
+                this.emit(':tell', responses.streamLive()) :
+                this.emit(':tell', responses.streamNotLive());
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
