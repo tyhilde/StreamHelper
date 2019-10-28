@@ -7,18 +7,10 @@ const {ClientAccessToken} = require('../secrets/credentials');
 //     console.log('getuser res', res);
 // })
 
-async function testFunc() {
-    // var res = await utils.getUser(ClientAccessToken);
-    // console.log('res', res);
-
-    var res = await utils.isStreamLiveAsync(ClientAccessToken);
-    console.log('streamLive res', res);
-};
-testFunc();
-
-// utils.isStreamLive(ClientAccessToken, (res) => {
-//     console.log('streamLive res', res);
-// })
+(async function isStreamLive() {
+    var res = await utils.isStreamLive(ClientAccessToken);
+    console.log('isStreamLive res', res);
+})();
 
 // utils.getStreamUpTime(ClientAccessToken, (res) => {
 //     console.log('getStreamupTime res', res);

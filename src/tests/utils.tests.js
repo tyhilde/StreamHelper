@@ -36,13 +36,13 @@ describe('getUser', () => {
     });
 });
 
-describe('isStreamLiveAsync', () => {
+describe('isStreamLive', () => {
     it('returns true when it is live', async (done) => {
         nock('https://api.twitch.tv')
             .get(`/helix/streams?user_id=${userId}`)
             .reply(200, {data: [{id: 1234, user_id: 'user123'}]});
 
-        const res = await utils.isStreamLiveAsync(accessToken);
+        const res = await utils.isStreamLive(accessToken);
 
         assert.equal(res, true);
         done();
@@ -53,34 +53,10 @@ describe('isStreamLiveAsync', () => {
             .get(`/helix/streams?user_id=${userId}`)
             .reply(200, {data: []});
 
-        const res = await utils.isStreamLiveAsync(accessToken);
+        const res = await utils.isStreamLive(accessToken);
 
         assert.equal(res, false);
         done();
-    });
-});
-
-describe('isStreamLive', () => {
-    it('returns true when it is live', (done) => {
-        nock('https://api.twitch.tv')
-            .get(`/helix/streams?user_id=${userId}`)
-            .reply(200, {data: [{id: 1234, user_id: 'user123'}]});
-
-        utils.isStreamLive(accessToken, (res) => {
-            assert.equal(res, true);
-            done();
-        });
-    });
-
-    it('returns false when it is not live', (done) => {
-        nock('https://api.twitch.tv')
-            .get(`/helix/streams?user_id=${userId}`)
-            .reply(200, {data: []});
-
-        utils.isStreamLive(accessToken, (res) => {
-            assert.equal(res, false);
-            done();
-        });
     });
 });
 

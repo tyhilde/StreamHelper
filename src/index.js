@@ -3,7 +3,6 @@ const responses = require('./responses');
 const {
     isAccessTokenValid,
     isStreamLive,
-    isStreamLiveAsync,
     getStreamUpTime,
     getFollowersCount,
     getFollowersLast,
@@ -35,7 +34,7 @@ const handlers = {
     },
     'isStreamLive': async function() {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            const isLive = await isStreamLiveAsync(this.event.session.user.accessToken);
+            const isLive = await isStreamLive(this.event.session.user.accessToken);
            
             isLive ?
                 this.emit(':tell', responses.streamLive()) :

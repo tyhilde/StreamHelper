@@ -23,7 +23,7 @@ function getPath({path, userName, userId, accessToken, pageCursor}) {
     return paths[path];
 }
 
-// TODO: Try using just fetch instead (uses promises instead of callback)
+// TODO: Deprecate / remove
 function fetchJson({endpoint, method, accessToken, userName, userId, pageCursor}, callback) {
     var path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
 
@@ -59,8 +59,6 @@ function fetchJson({endpoint, method, accessToken, userName, userId, pageCursor}
     req.end();
 }
 
-// TODO: This should allow everything else to be converted to async/await and simplify it
-// TODO: Before refactor double check that the intents will work with async/await
 async function newAsyncFetch({endpoint, method, accessToken, userName, userId, pageCursor}) {
     const path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
     const options = {
@@ -98,20 +96,6 @@ async function getUserAsync(accessToken) {
     };
 }
 
-async function isStreamLiveAsync(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const res = await newAsyncFetch({
-        endpoint: 'stream',
-        method: 'GET',
-        accessToken,
-        userId: user.userId
-    });
-
-    console.log('res', res);
-    const isLive = !!(res.data[0]);
-    return isLive;
-}
-
 function getUser(accessToken, callback) {
     fetchJson({
         endpoint: 'user',
@@ -125,18 +109,17 @@ function getUser(accessToken, callback) {
     });  
 }
 
-function isStreamLive(accessToken, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'stream',
-            method: 'GET',
-            accessToken,
-            userId: user.userId
-        }, (res) => {
-            const isLive = !!(res.data[0]);
-            callback(isLive);
-        });
+async function isStreamLive(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'stream',
+        method: 'GET',
+        accessToken,
+        userId: user.userId
     });
+
+    const isLive = !!(result.data[0]);
+    return isLive;
 }
 
 function getStreamUpTime(accessToken, callback) {
@@ -344,7 +327,6 @@ function sendTwitchMessage(clipUrl, userName, callback) {
 
 module.exports = {
     isStreamLive: isStreamLive,
-    isStreamLiveAsync: isStreamLiveAsync,
     isAccessTokenValid: isAccessTokenValid,
     getUser: getUser,
     getFollowers: getFollowers,
