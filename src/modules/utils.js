@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const {
     TwitchBotPassword
 } = require('../secrets/credentials');
+const STREAM_OFFLINE = 'STREAM_OFFLINE';
 
 function isAccessTokenValid(accessToken) {
     return !!(accessToken);
@@ -59,6 +60,7 @@ function fetchJson({endpoint, method, accessToken, userName, userId, pageCursor}
     req.end();
 }
 
+// TODO: After all functions moved to using async version of getUser and fetchJson, remove old and rename
 async function newAsyncFetch({endpoint, method, accessToken, userName, userId, pageCursor}) {
     const path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
     const options = {
@@ -83,6 +85,7 @@ async function newAsyncFetch({endpoint, method, accessToken, userName, userId, p
     }
 }
 
+// TODO: After all functions moved to using async version of getUser and fetchJson, remove old and rename
 async function getUserAsync(accessToken) {
     const res = await newAsyncFetch({
         endpoint: 'user',
@@ -122,35 +125,34 @@ async function isStreamLive(accessToken) {
     return isLive;
 }
 
-function getStreamUpTime(accessToken, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'stream',
-            method: 'GET',
-            accessToken,
-            userId: user.userId
-        }, (res) => {
-            console.log('res', res);
-            const streamIsLive = !!(res.data[0]);
-            if(streamIsLive) {
-                const streamStart = res.data[0].started_at;
-                const startDate = new Date(streamStart);
-                const currentDate = new Date();
-                
-                const totalMinsUptime = Math.floor((currentDate - startDate) / (1000 * 60));
-
-                const uptime = {
-                    minutes: totalMinsUptime % 60,
-                    hours: Math.floor(totalMinsUptime / 60)
-                }
-
-                callback(uptime);
-            }
-            else {
-                callback("STREAM_OFFLINE");
-            }
-        });
+async function getStreamUpTime(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'stream',
+        method: 'GET',
+        accessToken,
+        userId: user.userId
     });
+
+    const streamIsLive = !!(result.data[0]);
+
+    if(streamIsLive) {
+        const streamStart = result.data[0].started_at;
+        const startDate = new Date(streamStart);
+        const currentDate = new Date();
+        
+        const totalMinsUptime = Math.floor((currentDate - startDate) / (1000 * 60));
+
+        const uptime = {
+            minutes: totalMinsUptime % 60,
+            hours: Math.floor(totalMinsUptime / 60)
+        }
+
+        return uptime;
+    }
+    else {
+        return STREAM_OFFLINE;
+    }
 }
 
 function getFollowers(accessToken, callback) {
@@ -342,5 +344,6 @@ module.exports = {
     getSubscribersLastFive: getSubscribersLastFive,
     getStreamUpTime: getStreamUpTime,
     createClip: createClip,
-    sendTwitchMessage: sendTwitchMessage
+    sendTwitchMessage: sendTwitchMessage,
+    STREAM_OFFLINE
 };

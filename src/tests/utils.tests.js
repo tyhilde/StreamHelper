@@ -61,34 +61,34 @@ describe('isStreamLive', () => {
 });
 
 describe('getStreamUpTime', () => {
-    it('returns STREAM_OFFLINE if stream isnt up', (done) => {
+    it('returns STREAM_OFFLINE if stream isnt up', async (done) => {
         nock('https://api.twitch.tv')
             .get(`/helix/streams?user_id=${userId}`)
             .reply(200, {data: []});
 
-        utils.getStreamUpTime(accessToken, (res) => {
-            assert.equal(res, 'STREAM_OFFLINE');
-            done();
-        });
+        const res = await utils.getStreamUpTime(accessToken);
+
+        assert.equal(res, utils.STREAM_OFFLINE);
+        done();
     });
 
-    it('returns the stream up time', (done) => {
+    it('returns the stream up time', async (done) => {
         nock('https://api.twitch.tv')
             .get(`/helix/streams?user_id=${userId}`)
             .reply(200, {data: [{started_at: "2018-12-13T05:30:00Z"}]});
 
-        utils.getStreamUpTime(accessToken, (res) => {
-            const startDate = new Date("2018-12-13T05:30:00Z");
-            const currentDate = new Date();
-            const totalMins = Math.floor((currentDate - startDate) / (1000 * 60));
-            const uptime = {
-                minutes: totalMins % 60,
-                hours: Math.floor(totalMins / 60)
-            };
+        const res = await utils.getStreamUpTime(accessToken);
 
-            assert.deepEqual(res, uptime);
-            done();
-        });
+        const startDate = new Date("2018-12-13T05:30:00Z");
+        const currentDate = new Date();
+        const totalMins = Math.floor((currentDate - startDate) / (1000 * 60));
+        const uptime = {
+            minutes: totalMins % 60,
+            hours: Math.floor(totalMins / 60)
+        };
+
+        assert.deepEqual(res, uptime);
+        done();
     });
 });
 

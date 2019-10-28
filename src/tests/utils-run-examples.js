@@ -7,14 +7,18 @@ const {ClientAccessToken} = require('../secrets/credentials');
 //     console.log('getuser res', res);
 // })
 
-(async function isStreamLive() {
+async function isStreamLive() {
     var res = await utils.isStreamLive(ClientAccessToken);
     console.log('isStreamLive res', res);
-})();
+};
 
-// utils.getStreamUpTime(ClientAccessToken, (res) => {
-//     console.log('getStreamupTime res', res);
-// })
+async function getStreamUpTime() {
+    var res = await utils.getStreamUpTime(ClientAccessToken);
+    console.log('getStreamUpTime res', res);
+};
+
+// isStreamLive();
+getStreamUpTime();
 
 // utils.getFollowers(ClientAccessToken, (res) => {
 //     console.log('getFollowers res', res);

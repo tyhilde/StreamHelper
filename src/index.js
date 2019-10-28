@@ -12,7 +12,8 @@ const {
     getSubscribersLast,
     getSubscribersLastFive,
     createClip,
-    sendTwitchMessage
+    sendTwitchMessage,
+    STREAM_OFFLINE
 } = require('./modules/utils');
 
 const {
@@ -44,13 +45,13 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getStreamUpTime': function() {
+    'getStreamUpTime': async function() {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getStreamUpTime(this.event.session.user.accessToken, (uptime) => {
-                uptime === 'STREAM_OFFLINE' ?
-                    this.emit(':tell', responses.streamNotLive()) :
-                    this.emit(':tellWithCard', responses.streamUpTime(uptime), 'Uptime', uptime.hours + 'hrs ' + uptime.minutes + 'mins');
-            });
+            const uptime = await getStreamUpTime(this.event.session.user.accessToken);
+
+            uptime === STREAM_OFFLINE ?
+                this.emit(':tell', responses.streamNotLive()) :
+                this.emit(':tellWithCard', responses.streamUpTime(uptime), 'Uptime', uptime.hours + 'hrs ' + uptime.minutes + 'mins');
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
