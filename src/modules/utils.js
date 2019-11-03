@@ -155,23 +155,22 @@ async function getStreamUpTime(accessToken) {
     }
 }
 
-function getFollowers(accessToken, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'followers',
-            method: 'GET',
-            accessToken,
-            userId: user.userId
-        }, (res) => {
-            callback(res);
-        });
+async function getFollowers(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'followers',
+        method: 'GET',
+        accessToken,
+        userId: user.userId
     });
+
+    return result;
 }
 
-function getFollowersCount(accessToken, callback) {
-    getFollowers(accessToken, (followers) => {
-        callback(followers.total);
-    });
+async function getFollowersCount(accessToken) {
+    const followers = await getFollowers(accessToken);
+
+    return followers.total;
 }
 
 function getFollowersLast(accessToken, callback) {

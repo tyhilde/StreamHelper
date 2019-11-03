@@ -111,28 +111,28 @@ describe('followers', () => {
     };
     
     describe('getFollowers', () => {
-        it('returns object containing followers', (done) => {
-            const followersNock = nock('https://api.twitch.tv')
+        it('returns object containing followers', async (done) => {
+            nock('https://api.twitch.tv')
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
 
-            utils.getFollowers(accessToken, (res) => {
-                assert.deepEqual(res, followerResponse);
-                done();
-            });
+            const res = await utils.getFollowers(accessToken);
+
+            assert.deepEqual(res, followerResponse);
+            done();
         });
     });
 
     describe('getFollowersCount', () => {
-        it('returns the count of followers', (done) => {
-            const followersNock = nock('https://api.twitch.tv')
+        it('returns the count of followers', async (done) => {
+            nock('https://api.twitch.tv')
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
             
-            utils.getFollowersCount(accessToken, (res) => {
-                assert.equal(res, followerResponse.total);
-                done();
-            });
+            const res = await utils.getFollowersCount(accessToken);
+                
+            assert.equal(res, followerResponse.total);
+            done();
         });
     });
 

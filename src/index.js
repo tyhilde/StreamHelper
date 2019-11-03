@@ -57,13 +57,13 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getFollowerCount': function () {
+    'getFollowerCount': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getFollowersCount(this.event.session.user.accessToken, (count) => {
-                count > 0 ?
-                    this.emit(':tellWithCard', responses.followerCount(count), 'Followers', 'Followers: ' + count) :
-                    this.emit(':tell', responses.noFollowers());
-            });
+            const count = await getFollowersCount(this.event.session.user.accessToken);
+
+            count > 0 ?
+                this.emit(':tellWithCard', responses.followerCount(count), 'Followers', 'Followers: ' + count) :
+                this.emit(':tell', responses.noFollowers());
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());

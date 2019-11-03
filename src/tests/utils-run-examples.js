@@ -17,16 +17,20 @@ async function getStreamUpTime() {
     console.log('getStreamUpTime res', res);
 };
 
+async function getFollowers() {
+    var res = await utils.getFollowers(ClientAccessToken);
+    console.log('getFollowers res', res);
+};
+
+async function getFollowersCount() {
+    var res = await utils.getFollowersCount(ClientAccessToken);
+    console.log('getFollowersCount res', res);
+};
+
 // isStreamLive();
-getStreamUpTime();
-
-// utils.getFollowers(ClientAccessToken, (res) => {
-//     console.log('getFollowers res', res);
-// });
-
-// utils.getFollowersCount(ClientAccessToken, (res) => {
-//     console.log('followersCount res', res);
-// })
+// getStreamUpTime();
+// getFollowers();
+getFollowersCount();
 
 // utils.getFollowersLast(ClientAccessToken, (res) => {
 //     console.log('getFollowersLast res', res);
