@@ -27,18 +27,22 @@ async function getFollowersCount() {
     console.log('getFollowersCount res', res);
 };
 
+async function getFollowersLast() {
+    var res = await utils.getFollowersLast(ClientAccessToken);
+    console.log('getFollowersLast res', res);
+};
+
+async function getFollowersLastFive() {
+    var res = await utils.getFollowersLastFive(ClientAccessToken);
+    console.log('getFollowersLastFive res', res);
+};
+
 // isStreamLive();
 // getStreamUpTime();
 // getFollowers();
-getFollowersCount();
-
-// utils.getFollowersLast(ClientAccessToken, (res) => {
-//     console.log('getFollowersLast res', res);
-// })
-
-// utils.getFollowersLastFive(ClientAccessToken, (res) => {
-//     console.log('getFollowersLastFive res', res);
-// })
+// getFollowersCount();
+// getFollowersLast();
+getFollowersLastFive();
 
 // utils.getViewerCount(ClientAccessToken, (res) => {
 //     console.log('getViewerCount res', res);

@@ -6,6 +6,7 @@ const {
     TwitchBotPassword
 } = require('../secrets/credentials');
 const STREAM_OFFLINE = 'STREAM_OFFLINE';
+const NO_FOLLOWERS = 'NO_FOLLOWERS';
 
 function isAccessTokenValid(accessToken) {
     return !!(accessToken);
@@ -173,21 +174,23 @@ async function getFollowersCount(accessToken) {
     return followers.total;
 }
 
-function getFollowersLast(accessToken, callback) {
-    getFollowers(accessToken, (followers) => {
-        const follower = followers.total === 0 ? 'NO_FOLLOWERS' : followers.data[0].from_name;
-        callback(follower);
-    });
+async function getFollowersLast(accessToken) {
+    const followers = await getFollowers(accessToken);
+
+    const follower = followers.total === 0 ? NO_FOLLOWERS : followers.data[0].from_name;
+    return follower;
 }
 
-function getFollowersLastFive(accessToken, callback) {
-    getFollowers(accessToken, (followers) => {
-        const lastFiveFollowers = followers.total === 0 ? 'NO_FOLLOWERS' : followers.data.slice(0, 5).map(followers => {
-            return followers.from_name;
+async function getFollowersLastFive(accessToken) {
+    const followers = await getFollowers(accessToken);
+
+    const lastFiveFollowers = followers.total === 0 ?
+        NO_FOLLOWERS : 
+        followers.data.slice(0, 5).map(follower => {
+            return follower.from_name;
         });
  
-        callback(lastFiveFollowers);
-    });
+    return lastFiveFollowers;
 }
 
 function getViewerCount(accessToken, callback) {
@@ -344,5 +347,6 @@ module.exports = {
     getStreamUpTime: getStreamUpTime,
     createClip: createClip,
     sendTwitchMessage: sendTwitchMessage,
-    STREAM_OFFLINE
+    STREAM_OFFLINE,
+    NO_FOLLOWERS
 };

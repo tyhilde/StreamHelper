@@ -137,42 +137,42 @@ describe('followers', () => {
     });
 
     describe('getFollowersLast', () => {
-        it('returns the last follower', (done) => {
-            const followersNock = nock('https://api.twitch.tv')
+        it('returns the last follower', async (done) => {
+            nock('https://api.twitch.tv')
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
             
-            utils.getFollowersLast(accessToken, (res) => {
-                assert.equal(res, followerResponse.data[0].from_name);
-                done();
-            });
+            const res = await utils.getFollowersLast(accessToken);
+
+            assert.equal(res, followerResponse.data[0].from_name);
+            done();
         });
 
-        it('returns the NO_FOLLOWERS if there are none', (done) => {
-            const followersNock = nock('https://api.twitch.tv')
+        it('returns the NO_FOLLOWERS if there are none', async (done) => {
+            nock('https://api.twitch.tv')
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, noFollowersResponse);
             
-            utils.getFollowersLast(accessToken, (res) => {
-                assert.equal(res, 'NO_FOLLOWERS');
-                done();
-            });
+            const res = await utils.getFollowersLast(accessToken);
+
+            assert.equal(res, utils.NO_FOLLOWERS);
+            done();
         });
     });
 
     describe('getFollowersLastFive', () => {
-       it('returns an array of the last five followers', (done) => {
-            const followersNock = nock('https://api.twitch.tv')
+       it('returns an array of the last five followers', async (done) => {
+            nock('https://api.twitch.tv')
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponse);
         
-            utils.getFollowersLastFive(accessToken, (res) => {
-                assert.deepEqual(res, ['follower1', 'follower2', 'follower3', 'follower4', 'follower5']);
-                done();
-            });
+            const res = await utils.getFollowersLastFive(accessToken);
+
+            assert.deepEqual(res, ['follower1', 'follower2', 'follower3', 'follower4', 'follower5']);
+            done();
         });
 
-        it('returns an array of the last two followers if there are only 2', (done) => {
+        it('returns an array of the last two followers if there are only 2', async (done) => {
             const followerResponseTwo = {
                 total: 2,
                 data: [
@@ -185,21 +185,21 @@ describe('followers', () => {
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, followerResponseTwo);
 
-            utils.getFollowersLastFive(accessToken, (res) => {
-                assert.deepEqual(res, ['follower1', 'follower2']);
-                done();
-            });
+            const res = await utils.getFollowersLastFive(accessToken);
+
+            assert.deepEqual(res, ['follower1', 'follower2']);
+            done();
         });
 
-        it('returns the NO_FOLLOWERS if there are none', (done) => {
-            const followersNock = nock('https://api.twitch.tv')
+        it('returns the NO_FOLLOWERS if there are none', async (done) => {
+            nock('https://api.twitch.tv')
                 .get(`/helix/users/follows?to_id=${userId}`)
                 .reply(200, noFollowersResponse);
             
-            utils.getFollowersLastFive(accessToken, (res) => {
-                assert.equal(res, 'NO_FOLLOWERS');
-                done();
-            });
+            const res = await utils.getFollowersLastFive(accessToken);
+
+            assert.equal(res, utils.NO_FOLLOWERS);
+            done();
         });
     });
 });

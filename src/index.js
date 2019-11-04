@@ -13,7 +13,8 @@ const {
     getSubscribersLastFive,
     createClip,
     sendTwitchMessage,
-    STREAM_OFFLINE
+    STREAM_OFFLINE,
+    NO_FOLLOWERS
 } = require('./modules/utils');
 
 const {
@@ -69,25 +70,25 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastFollower': function () {
+    'getLastFollower': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getFollowersLast(this.event.session.user.accessToken, (follower) => {
-                follower === 'NO_FOLLOWERS' ?
-                    this.emit(':tell', responses.noFollowers()) :
-                    this.emit(':tellWithCard', responses.lastFollower(follower), 'Followers', 'Last follower: ' + follower);
-            });
+            const follower = await getFollowersLast(this.event.session.user.accessToken);
+
+            follower === NO_FOLLOWERS ?
+                this.emit(':tell', responses.noFollowers()) :
+                this.emit(':tellWithCard', responses.lastFollower(follower), 'Followers', 'Last follower: ' + follower);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastFiveFollowers': function () {
+    'getLastFiveFollowers': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getFollowersLastFive(this.event.session.user.accessToken, (followers) => {
-                followers === 'NO_FOLLOWERS' ?
-                    this.emit(':tell', responses.noFollowers()) :
-                    this.emit(':tellWithCard', responses.lastXFollowers(followers), 'Followers', 'Followers: ' + followers);
-            });
+            const followers = await getFollowersLastFive(this.event.session.user.accessToken);
+            
+            followers === NO_FOLLOWERS ?
+                this.emit(':tell', responses.noFollowers()) :
+                this.emit(':tellWithCard', responses.lastXFollowers(followers), 'Followers', 'Followers: ' + followers);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
