@@ -205,8 +205,8 @@ describe('followers', () => {
 });
 
 describe('viewers', () => {
-    describe('getViewerCount', () => {
-        it('returns the count of viewers when stream is live', (done) => {
+    describe('getViewerCount', async () => {
+        it('returns the count of viewers when stream is live', async (done) => {
             const viewerResponse = {
                 data: [
                     {
@@ -215,29 +215,29 @@ describe('viewers', () => {
                 ]
             };
 
-            const viewersNock = nock('https://api.twitch.tv')
+            nock('https://api.twitch.tv')
                 .get(`/helix/streams?user_id=${userId}`)
                 .reply(200, viewerResponse);
 
-            utils.getViewerCount(accessToken, (res) => {
-                assert.equal(res, viewerResponse.data[0].viewer_count);
-                done();
-            });
+            const res = await utils.getViewerCount(accessToken);
+
+            assert.equal(res, viewerResponse.data[0].viewer_count);
+            done();
         });
 
-        it('returns 0 when there are no viewers', (done) => {
+        it('returns 0 when there are no viewers', async (done) => {
             const viewerResponse = {
                 data: []
             };
 
-            const viewersNock = nock('https://api.twitch.tv')
+            nock('https://api.twitch.tv')
                 .get(`/helix/streams?user_id=${userId}`)
                 .reply(200, viewerResponse);
 
-            utils.getViewerCount(accessToken, (res) => {
-                assert.deepEqual(res, 0);
-                done();
-            });
+            const res = await utils.getViewerCount(accessToken);
+
+            assert.deepEqual(res, 0);
+            done();
         });
     });
 });

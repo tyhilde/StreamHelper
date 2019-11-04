@@ -2,9 +2,9 @@ const https = require('https');
 const tmi = require('tmi.js');
 const fetch = require('node-fetch');
 
-const {
-    TwitchBotPassword
-} = require('../secrets/credentials');
+// const {
+//     TwitchBotPassword
+// } = require('../secrets/credentials');
 const STREAM_OFFLINE = 'STREAM_OFFLINE';
 const NO_FOLLOWERS = 'NO_FOLLOWERS';
 
@@ -193,18 +193,17 @@ async function getFollowersLastFive(accessToken) {
     return lastFiveFollowers;
 }
 
-function getViewerCount(accessToken, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'stream',
-            method: 'GET',
-            accessToken,
-            userId: user.userId
-        }, (res) => {
-            const count = res.data[0] ? res.data[0].viewer_count : 0;
-            callback(count);
-        });
+async function getViewerCount(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'stream',
+        method: 'GET',
+        accessToken,
+        userId: user.userId
     });
+
+    const count = result.data[0] ? result.data[0].viewer_count : 0;
+    return count;
 }
 
 function getSubscribers(accessToken, callback) {

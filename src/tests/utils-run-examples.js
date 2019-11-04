@@ -37,12 +37,18 @@ async function getFollowersLastFive() {
     console.log('getFollowersLastFive res', res);
 };
 
+async function getViewerCount() {
+    var res = await utils.getViewerCount(ClientAccessToken);
+    console.log('getViewerCount res', res);
+};
+
 // isStreamLive();
 // getStreamUpTime();
 // getFollowers();
 // getFollowersCount();
 // getFollowersLast();
-getFollowersLastFive();
+// getFollowersLastFive();
+getViewerCount();
 
 // utils.getViewerCount(ClientAccessToken, (res) => {
 //     console.log('getViewerCount res', res);
