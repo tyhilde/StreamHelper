@@ -94,11 +94,11 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getViewerCount': function () {
+    'getViewerCount': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getViewerCount(this.event.session.user.accessToken, (count) => {
-                this.emit(':tellWithCard', responses.viewerCount(count), 'Viewers', 'Viewers: ' + count);
-            });
+            const count = await getViewerCount(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.viewerCount(count), 'Viewers', 'Viewers: ' + count);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());

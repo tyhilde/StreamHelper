@@ -2,9 +2,9 @@ const https = require('https');
 const tmi = require('tmi.js');
 const fetch = require('node-fetch');
 
-// const {
-//     TwitchBotPassword
-// } = require('../secrets/credentials');
+const {
+    TwitchBotPassword
+} = require('../secrets/credentials');
 const STREAM_OFFLINE = 'STREAM_OFFLINE';
 const NO_FOLLOWERS = 'NO_FOLLOWERS';
 
