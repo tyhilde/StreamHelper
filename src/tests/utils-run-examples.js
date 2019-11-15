@@ -62,6 +62,11 @@ async function getSubscribersCount() {
     console.log('getSubscribersCount res', res);
 };
 
+async function createClip() {
+    var res = await utils.createClip(ClientAccessToken);
+    console.log('createClip res', res);
+};
+
 // isStreamLive();
 // getStreamUpTime();
 // getFollowers();
@@ -72,7 +77,8 @@ async function getSubscribersCount() {
 // getSubscribersNew();
 // getSubscribersLast();
 // getSubscribersLastFive();
-getSubscribersCount();
+// getSubscribersCount();
+createClip();
 
 // utils.getSubscribers(ClientAccessToken, (res) => {
 //     console.log('old getSubscribers res', res);

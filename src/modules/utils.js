@@ -223,13 +223,7 @@ function getSubscribers(accessToken, callback) {
 }
 
 // TODO: Need to update the account linking and add more params
-// TODO: Verify what response looks like for zero subs - just returns empty array same shape
-// TODO: what response looks like for non partner/affiliate - just returns empty array same shape
-// TODO: getsubscribers count will need to use ?after=paginationCursor
-// TODO: getsubscribersLast should be able to use ?first=1 (to get last sub)
-// TODO: wait to here back on forum about returning in order
-// Getsubscribersnew func will return first page (up to 100)
-
+//Returns one page (up to 100) at a time
 async function getSubscribersNew(accessToken, pageCursor = '') {
     const user = await getUserAsync(accessToken);
     const result = await newAsyncFetch({
@@ -295,23 +289,19 @@ async function getSubscribersLastFive(accessToken) {
     return lastFiveSubscribers;
 }
 
-function createClip(accessToken, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'createClip',
-            method: 'POST',
-            accessToken,
-            userId: user.userId
-        }, (res) => {
-            const clip = res.data ? res.data[0] : "STREAM_OFFLINE";
-            const val = {
-                userName: user.userName,
-                clip
-            }
+async function createClip(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'createClip',
+        method: 'POST',
+        accessToken,
+        userId: user.userId
+    });
 
-            callback(val);
-        });
-    })
+    return {
+        userName: user.userName,
+        clip: result.data ? result.data[0] : STREAM_OFFLINE
+    };
 }
 
 function sendTwitchMessage(clipUrl, userName, callback) {

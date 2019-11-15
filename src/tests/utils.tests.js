@@ -242,37 +242,6 @@ describe('viewers', () => {
     });
 });
 
-describe('subscribers', () => {
-    const subscriberResponse = {
-        _total: 2,
-        subscriptions: [
-            {
-                user: {
-                    display_name: 'user1'
-                }, 
-            },
-            {
-                user: {
-                    display_name: 'user2'
-                }, 
-            }
-        ]
-    };
-
-    describe('getSubscribers', () => {
-        it('returns object containing subscribers', (done) => {
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberResponse);
-
-            utils.getSubscribers(accessToken, (res) => {
-                assert.deepEqual(res, subscriberResponse);
-                done();
-            });
-        });
-    });
-});
-
 describe('subscribersNew', () => {
     const subscriberResponse = {
         data: [ 
@@ -490,7 +459,7 @@ describe('subscribersNew', () => {
 });
 
 describe('createClip', () => {
-    it('returns the id and url of the created clip', (done) => {
+    it('returns the id and url of the created clip', async (done) => {
         const createClipResponse = {
             data: [
                 {
@@ -500,30 +469,30 @@ describe('createClip', () => {
             ]
          };
 
-         const createClipNock = nock('https://api.twitch.tv')
-             .post(`/helix/clips?broadcaster_id=${userId}`)
-             .reply(200, createClipResponse);
+        nock('https://api.twitch.tv')
+            .post(`/helix/clips?broadcaster_id=${userId}`)
+            .reply(200, createClipResponse);
      
-         utils.createClip(accessToken, (res) => {
-             assert.deepEqual(res, {clip: createClipResponse.data[0], userName});
-             done();
-         });
+        const res = await utils.createClip(accessToken);
+
+        assert.deepEqual(res, {clip: createClipResponse.data[0], userName});
+        done();
     });
 
-    it('returns STREAM_OFFLINE when the stream isnt live', (done) => {
+    it('returns STREAM_OFFLINE when the stream isnt live', async (done) => {
         const streamOfflineResponse = {
             status: 404,
             error: 'Not found'
-         };
+        };
 
-         const createClipNock = nock('https://api.twitch.tv')
-             .post(`/helix/clips?broadcaster_id=${userId}`)
-             .reply(200, streamOfflineResponse);
+         nock('https://api.twitch.tv')
+            .post(`/helix/clips?broadcaster_id=${userId}`)
+            .reply(200, streamOfflineResponse);
      
-         utils.createClip(accessToken, (res) => {
-             assert.deepEqual(res, {clip: 'STREAM_OFFLINE', userName});
-             done();
-         });
+        const res = await utils.createClip(accessToken);
+
+        assert.deepEqual(res, {clip: utils.STREAM_OFFLINE, userName});
+        done();
     });
 });
 

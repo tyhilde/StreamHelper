@@ -134,20 +134,20 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'createClip': function () {
+    'createClip': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            createClip(this.event.session.user.accessToken, (res) => {
-                if (res.clip === 'STREAM_OFFLINE') {
-                    this.emit(':tell', responses.clipStreamOffline());
-                }
-                else {
-                    var clipUrl = res.clip.edit_url;
-                    var clipUrlTrimmed = clipUrl.substring(0, clipUrl.length-5);
-                    sendTwitchMessage(clipUrlTrimmed, res.userName, (response) => {
-                        this.emit(':tellWithCard', responses.clipCreated(res.clip), 'Clip Created', 'Clip URL: ' + res.clip.edit_url);
-                    })
-                }   
-            });
+            const res = await createClip(this.event.session.user.accessToken);
+
+            if (res.clip === STREAM_OFFLINE) {
+                this.emit(':tell', responses.clipStreamOffline());
+            }
+            else {
+                var clipUrl = res.clip.edit_url;
+                var clipUrlTrimmed = clipUrl.substring(0, clipUrl.length-5);
+                sendTwitchMessage(clipUrlTrimmed, res.userName, () => {
+                    this.emit(':tellWithCard', responses.clipCreated(res.clip), 'Clip Created', 'Clip URL: ' + res.clip.edit_url);
+                })
+            }
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
