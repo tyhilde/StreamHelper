@@ -1,6 +1,6 @@
 {
   "name": "streamhelper",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A Twitch tool to helper streamers",
   "main": "index.js",
   "scripts": {
