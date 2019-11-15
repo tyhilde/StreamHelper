@@ -1,10 +1,40 @@
 # Stream Helper Skill
 Alexa skill that provides actions for streamers on Twitch.tv
 
-## Deployments
-Run `npm run deploy` to run the script that uses the gulpfile to zip files and upload to the lambda function.
+## Developing the Skill
+- add utils to the `modules/utils.js` file
+- to test the util on its own, add it to the `tests/utils-run-example.js` file
+- add util unit tests to the `tests/utils.tests.js` file
+- `tests/all-the-tests.tests.js` is where the handlers are tested (TODO: Rename this file...)
+- `index.js` file has all of the intent handlers
+- `responses.js` is where all strings should live
 
-TODO: add more information here about how to use / how it works
+## Deployments
+Run `npm run deploy` to run the gulp script to upload files to Lambda function.
+
+This function will inject Environment variables from the secrets file, add relevant files to the dist/ folder, zip all these files, and then upload to the selected Lambda function.
+
+To change which Lambda function is deployed to, change `functionName` in [lambda-config.js](../src/lambda-config.js)
+
+> If you need to deploy to the TestSkill, ensure you also update the `AlexaAppId` in the `credentials.js` file to match. If you forget to do this step, the App will not run and will give `Error: Invalid ApplicationId`.
+
+
+## Testing
+
+To test the Util functions locally:
+- Open Integrated Terminal in VS Code
+- Call functions that need to be tested from file
+- Run `node fileName.js`
+   - example `node utilsTest.js`
+
+Use `npm run test-utils` to run the utils unit tests.
+Use `npm run test` to run all of the tests (including handler tests).
+
+## Testing the Alexa Intents
+
+- Use nock to mock responses from APIs (looks very similar to what is in the utils tests)
+
+
 
 
 ## Updating Scoping Permissions

@@ -2,7 +2,7 @@ module.exports = {
     region: 'us-east-1',
     handler: 'index.handler',
     role: '@@ROLE',
-    functionName: 'streamHelperDevelop',
+    functionName: 'streamHelperDevelop', // Set the function name to deploy to [streamHelperDevelop, Test-StreamHelperRefactor]
     timeout: 10,
     memorySize: 128,
     publish: true,
