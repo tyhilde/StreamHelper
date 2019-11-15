@@ -3,9 +3,10 @@
 var utils = require('../modules/utils');
 const {ClientAccessToken} = require('../secrets/credentials');
 
-// utils.getUser(ClientAccessToken, (res) => {
-//     console.log('getuser res', res);
-// })
+async function getUser() {
+    var res = await utils.getUser(ClientAccessToken);
+    console.log('getUser res', res);
+}
 
 async function isStreamLive() {
     var res = await utils.isStreamLive(ClientAccessToken);
@@ -42,9 +43,9 @@ async function getViewerCount() {
     console.log('getViewerCount res', res);
 };
 
-async function getSubscribersNew() {
-    var res = await utils.getSubscribersNew(ClientAccessToken, '');
-    console.log('getSubscribersNew res', res);
+async function getSubscribers() {
+    var res = await utils.getSubscribers(ClientAccessToken, '');
+    console.log('getSubscribers res', res);
 };
 
 async function getSubscribersLast() {
@@ -67,6 +68,7 @@ async function createClip() {
     console.log('createClip res', res);
 };
 
+// getUser();
 // isStreamLive();
 // getStreamUpTime();
 // getFollowers();
@@ -74,20 +76,11 @@ async function createClip() {
 // getFollowersLast();
 // getFollowersLastFive();
 // getViewerCount();
-// getSubscribersNew();
+// getSubscribers();
 // getSubscribersLast();
 // getSubscribersLastFive();
 // getSubscribersCount();
-createClip();
-
-// utils.getSubscribers(ClientAccessToken, (res) => {
-//     console.log('old getSubscribers res', res);
-//     console.log('old getSubscribers res', res.subscriptions);
-// })
-
-// utils.createClip(ClientAccessToken, (res) => {
-//     console.log('createClip res', res);
-// })
+// createClip();
 
 // utils.sendTwitchMessage('someMessage test', 'backsh00ter',  (res) => {
 //     console.log('sendTwitchMessage res', res);

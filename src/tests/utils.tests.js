@@ -28,11 +28,11 @@ describe('isAccessTokenValid', () => {
 })
 
 describe('getUser', () => {
-    it('returns the userId', (done) => {
-        utils.getUser(accessToken, (res) => {
-            assert.deepEqual(res, {userId: userId, userName: userName});
-            done();
-        });
+    it('returns the userId', async (done) => {
+        const res = await utils.getUser(accessToken);
+
+        assert.deepEqual(res, {userId: userId, userName: userName});
+        done();
     });
 });
 
@@ -315,14 +315,14 @@ describe('subscribersNew', () => {
         }
     };
 
-    describe('getSubscribersNew', () => {
+    describe('getSubscribers', () => {
         it('returns object containing array of subscribers', async (done) => {
             nock('https://api.twitch.tv')
                 .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
                 .reply(200, subscriberResponse);
 
 
-            const res = await utils.getSubscribersNew(accessToken, '');
+            const res = await utils.getSubscribers(accessToken, '');
 
             assert.deepEqual(res, subscriberResponse);
             done();
@@ -333,7 +333,7 @@ describe('subscribersNew', () => {
                 .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
                 .reply(200, {data: [],  pagination: {cursor: 'cursor1'}});
 
-            const res = await utils.getSubscribersNew(accessToken, '');
+            const res = await utils.getSubscribers(accessToken, '');
 
             assert.deepEqual(res, {data: [],  pagination: {cursor: 'cursor1'}});
             done();

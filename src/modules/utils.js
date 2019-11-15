@@ -1,4 +1,3 @@
-const https = require('https');
 const tmi = require('tmi.js');
 const fetch = require('node-fetch');
 
@@ -13,13 +12,12 @@ function isAccessTokenValid(accessToken) {
     return !!(accessToken);
 }
 
-function getPath({path, userName, userId, accessToken, pageCursor}) {
-    const paths = { // using helix api
+function getPath({path, userId, pageCursor}) {
+    const paths = {
         user: `/helix/users`,
         stream: `/helix/streams?user_id=${userId}`,
         followers: `/helix/users/follows?to_id=${userId}`,
-        subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Deprecate: Update to helix once added to API
-        subscribersNew: `/helix/subscriptions?broadcaster_id=${userId}&first=100&after=${pageCursor}`, // TODO: Might need pass &user_id as well, &after={cursor} to get following pages
+        subscribers: `/helix/subscriptions?broadcaster_id=${userId}&first=100&after=${pageCursor}`,
         subscribersMostRecent: `/helix/subscriptions?broadcaster_id=${userId}&first=1`,
         subscribersLastFive: `/helix/subscriptions?broadcaster_id=${userId}&first=5`,
         createClip: `/helix/clips?broadcaster_id=${userId}`,
@@ -28,45 +26,8 @@ function getPath({path, userName, userId, accessToken, pageCursor}) {
     return paths[path];
 }
 
-// TODO: Deprecate / remove
-function fetchJson({endpoint, method, accessToken, userName, userId, pageCursor}, callback) {
-    var path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
-
-    var options = {
-        host: 'api.twitch.tv',
-        port: 443,
-        path: path,
-        method: method,
-        headers: {
-            Authorization: 'Bearer ' + accessToken
-        }
-    };
-
-    var req = https.request(options, (res) => {
-        var returnData = "";
-
-        res.setEncoding('utf8');
-
-        res.on('data', chunk => {
-            returnData += chunk;
-        });
-
-        res.on('end', () => {
-            if(returnData) {
-                callback(JSON.parse(returnData));
-            }
-        });
-    });
-
-    req.on('error', (e) => {
-        console.error(`problem with request: ${e.message}`);
-    })
-    req.end();
-}
-
-// TODO: After all functions moved to using async version of getUser and fetchJson, remove old and rename
-async function newAsyncFetch({endpoint, method, accessToken, userName, userId, pageCursor}) {
-    const path = getPath({path: endpoint, userName, userId, accessToken, pageCursor});
+async function asyncFetch({endpoint, method, accessToken, userId, pageCursor}) {
+    const path = getPath({path: endpoint, userId, pageCursor});
     const options = {
         host: 'api.twitch.tv',
         port: 443,
@@ -89,9 +50,8 @@ async function newAsyncFetch({endpoint, method, accessToken, userName, userId, p
     }
 }
 
-// TODO: After all functions moved to using async version of getUser and fetchJson, remove old and rename
-async function getUserAsync(accessToken) {
-    const res = await newAsyncFetch({
+async function getUser(accessToken) {
+    const res = await asyncFetch({
         endpoint: 'user',
         method: 'GET',
         accessToken
@@ -103,22 +63,9 @@ async function getUserAsync(accessToken) {
     };
 }
 
-function getUser(accessToken, callback) {
-    fetchJson({
-        endpoint: 'user',
-        method: 'GET',
-        accessToken
-    }, (res) => {
-        callback({
-            userId: res.data[0].id,
-            userName: res.data[0].display_name
-        });
-    });  
-}
-
 async function isStreamLive(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'stream',
         method: 'GET',
         accessToken,
@@ -130,8 +77,8 @@ async function isStreamLive(accessToken) {
 }
 
 async function getStreamUpTime(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'stream',
         method: 'GET',
         accessToken,
@@ -160,8 +107,8 @@ async function getStreamUpTime(accessToken) {
 }
 
 async function getFollowers(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'followers',
         method: 'GET',
         accessToken,
@@ -197,8 +144,8 @@ async function getFollowersLastFive(accessToken) {
 }
 
 async function getViewerCount(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'stream',
         method: 'GET',
         accessToken,
@@ -209,25 +156,12 @@ async function getViewerCount(accessToken) {
     return count;
 }
 
-function getSubscribers(accessToken, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'subscribers',
-            method: 'GET',
-            accessToken,
-            userName: user.userName
-        }, (res) => {
-            callback(res);
-        });
-    });
-}
-
 // TODO: Need to update the account linking and add more params
 //Returns one page (up to 100) at a time
-async function getSubscribersNew(accessToken, pageCursor = '') {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
-        endpoint: 'subscribersNew',
+async function getSubscribers(accessToken, pageCursor = '') {
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
+        endpoint: 'subscribers',
         method: 'GET',
         accessToken,
         userId: user.userId,
@@ -243,7 +177,7 @@ async function getSubscribersCount(accessToken) {
     let cursor = '';
 
     while(shouldKeepPaging) {
-        const pageResult = await getSubscribersNew(accessToken, cursor);
+        const pageResult = await getSubscribers(accessToken, cursor);
 
         cursor = pageResult.pagination.cursor;
         count = count + pageResult.data.length;
@@ -255,8 +189,8 @@ async function getSubscribersCount(accessToken) {
 
 // This won't be the TRUE last subscriber until Twitch update endpoint to make this possible (currently doesnt allow sorting)
 async function getSubscribersLast(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'subscribersMostRecent',
         method: 'GET',
         accessToken,
@@ -270,8 +204,8 @@ async function getSubscribersLast(accessToken) {
 
 // This won't be the TRUE last five subscribers until Twitch update endpoint to make this possible (currently doesnt allow sorting)
 async function getSubscribersLastFive(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'subscribersLastFive',
         method: 'GET',
         accessToken,
@@ -290,8 +224,8 @@ async function getSubscribersLastFive(accessToken) {
 }
 
 async function createClip(accessToken) {
-    const user = await getUserAsync(accessToken);
-    const result = await newAsyncFetch({
+    const user = await getUser(accessToken);
+    const result = await asyncFetch({
         endpoint: 'createClip',
         method: 'POST',
         accessToken,
@@ -344,7 +278,6 @@ module.exports = {
     getFollowersLastFive: getFollowersLastFive,
     getViewerCount: getViewerCount,
     getSubscribers: getSubscribers,
-    getSubscribersNew: getSubscribersNew,
     getSubscribersCount: getSubscribersCount,
     getSubscribersLast: getSubscribersLast,
     getSubscribersLastFive: getSubscribersLastFive,
