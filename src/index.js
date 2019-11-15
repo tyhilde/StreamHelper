@@ -124,11 +124,11 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastFiveSubscribers': function () {
+    'getLastFiveSubscribers': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getSubscribersLastFive(this.event.session.user.accessToken, (subscribers) => {
-                this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Subscribers: ' + subscribers);
-            });
+            const subscribers = await getSubscribersLastFive(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Subscribers: ' + subscribers);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());

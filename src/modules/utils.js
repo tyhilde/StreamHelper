@@ -21,6 +21,7 @@ function getPath({path, userName, userId, accessToken, pageCursor}) {
         subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Deprecate: Update to helix once added to API
         subscribersNew: `/helix/subscriptions?broadcaster_id=${userId}&first=100&after=${pageCursor}`, // TODO: Might need pass &user_id as well, &after={cursor} to get following pages
         subscribersMostRecent: `/helix/subscriptions?broadcaster_id=${userId}&first=1`,
+        subscribersLastFive: `/helix/subscriptions?broadcaster_id=${userId}&first=5`,
         createClip: `/helix/clips?broadcaster_id=${userId}`,
     };
 
@@ -255,7 +256,7 @@ function getSubscribersCount(accessToken, callback) {
     });
 }
 
-// This won't be the TRUE last subscriber until Twitch update endpoint to make this possible
+// This won't be the TRUE last subscriber until Twitch update endpoint to make this possible (currently doesnt allow sorting)
 async function getSubscribersLast(accessToken) {
     const user = await getUserAsync(accessToken);
     const result = await newAsyncFetch({
@@ -264,26 +265,31 @@ async function getSubscribersLast(accessToken) {
         accessToken,
         userId: user.userId,
     });
-
     // Returns empty array {data: []}, if not parternered or no subs
     const subscriberName = result.data.length && result.data[0].user_name;
 
     return subscriberName || NO_SUBSCRIBERS;
 }
 
-function getSubscribersLastFive(accessToken, callback) {
-    getSubscribers(accessToken, (subscribers) => {
-        const isPartnered = !!(subscribers._total);
-        // Counts self as first subscriber, if less than 5 don't include self in output
-        const endSlice = subscribers._total > 5 ? 5 : subscribers._total -1;
-        const lastFiveSubscribers = subscribers.subscriptions && subscribers._total > 1 ?
-            subscribers.subscriptions.slice(0, endSlice).map(subscribers => {
-                return subscribers.user.display_name;
-            }) :
-            "NO_SUBSCRIBERS";
-
-        callback(isPartnered ? lastFiveSubscribers : "NOT_A_PARTNER");
+// This won't be the TRUE last five subscribers until Twitch update endpoint to make this possible (currently doesnt allow sorting)
+async function getSubscribersLastFive(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'subscribersLastFive',
+        method: 'GET',
+        accessToken,
+        userId: user.userId,
     });
+
+    if(!result.data.length) {
+        return NO_SUBSCRIBERS;
+    }
+
+    const lastFiveSubscribers = result.data.map(subscriber => {
+        return subscriber.user_name;
+    })
+
+    return lastFiveSubscribers;
 }
 
 function createClip(accessToken, callback) {

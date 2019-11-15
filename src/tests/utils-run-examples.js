@@ -52,6 +52,11 @@ async function getSubscribersLast() {
     console.log('getSubscribersLast res', res);
 };
 
+async function getSubscribersLastFive() {
+    var res = await utils.getSubscribersLastFive(ClientAccessToken);
+    console.log('getSubscribersLastFive res', res);
+};
+
 // isStreamLive();
 // getStreamUpTime();
 // getFollowers();
@@ -60,7 +65,8 @@ async function getSubscribersLast() {
 // getFollowersLastFive();
 // getViewerCount();
 // getSubscribersNew();
-getSubscribersLast();
+// getSubscribersLast();
+getSubscribersLastFive();
 
 // utils.getSubscribers(ClientAccessToken, (res) => {
 //     console.log('old getSubscribers res', res);

@@ -300,76 +300,6 @@ describe('subscribers', () => {
             });
         });
     });
-
-    describe('getSubscribersLastFive', (done) => {
-        it('returns the 1 subscriber if there are 2 including the user', (done) => {
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberResponse);
-
-            utils.getSubscribersLastFive(accessToken, (res) => {
-                assert.deepEqual(res, ['user1']);
-                done();
-            });
-        });
-
-        it('returns the last 5 subscribers', (done) => {
-            const subscriberManyResponse = {
-                _total: 6,
-                subscriptions: [
-                    { user: { display_name: 'user1' }},
-                    { user: { display_name: 'user2' }},
-                    { user: { display_name: 'user3' }},
-                    { user: { display_name: 'user4' }},
-                    { user: { display_name: 'user5' }},
-                    { user: { display_name: 'user6' }},
-                ]
-            };
-
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberManyResponse);
-
-            utils.getSubscribersLastFive(accessToken, (res) => {
-                assert.deepEqual(res, ['user1', 'user2', 'user3', 'user4', 'user5']);
-                done();
-            });
-        });
-
-        it('returns NO_SUBSCRIBERS if the user doesnt have any subscribers', (done) => {
-            const subscriberNoneResponse = {
-                _total: 1,
-                subscriptions: [
-                    { user: { display_name: 'user1' }}
-                ]
-            };
-
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberNoneResponse);
-
-            utils.getSubscribersLastFive(accessToken, (res) => {
-                assert.deepEqual(res, "NO_SUBSCRIBERS");
-                done();
-            });
-        });
-
-        it('returns NOT_A_PARTNER when user is not partnered', (done) => {
-            const subscriberNotAPartnerResponse = {
-                error: "Bad request",
-                status: 400
-            };
-
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberNotAPartnerResponse);
-
-            utils.getSubscribersLastFive(accessToken, (res) => {
-                assert.deepEqual(res, "NOT_A_PARTNER");
-                done();
-            });
-        });
-    });
 });
 
 describe('subscribersNew', () => {
@@ -402,6 +332,19 @@ describe('subscribersNew', () => {
                 user_id: 'userId3',
                 user_name: 'userName3'
             }
+          ],
+        pagination: {
+            cursor: 'cursorId1'
+        }
+    };
+
+    const subscriberManyResponse = {
+        data: [ 
+            { user_name: 'userName1' },
+            { user_name: 'userName2' },
+            { user_name: 'userName3' },
+            { user_name: 'userName4' },
+            { user_name: 'userName5' }
           ],
         pagination: {
             cursor: 'cursorId1'
@@ -475,6 +418,41 @@ describe('subscribersNew', () => {
                 .reply(200, noSubscriberResponse);
 
             const res = await utils.getSubscribersLast(accessToken);
+            assert.deepEqual(res, utils.NO_SUBSCRIBERS);
+            done();
+        });
+    });
+
+    describe('getSubscribersLastFive', () => {
+        it('returns the 3 subscriber names if there less than 5', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+                .reply(200, subscriberResponse);
+
+            const res = await utils.getSubscribersLastFive(accessToken);
+
+            assert.deepEqual(res, ['userName1', 'userName2', 'userName3']);
+            done();
+        });
+
+        it('returns the last 5 subscribers', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+                .reply(200, subscriberManyResponse);
+
+            const res = await utils.getSubscribersLastFive(accessToken);
+
+            assert.deepEqual(res, ['userName1', 'userName2', 'userName3', 'userName4', 'userName5']);
+            done();
+        });
+
+        it('returns NO_SUBSCRIBERS if the user doesnt have any subscribers', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+                .reply(200, noSubscriberResponse);
+
+            const res = await utils.getSubscribersLastFive(accessToken);
+
             assert.deepEqual(res, utils.NO_SUBSCRIBERS);
             done();
         });

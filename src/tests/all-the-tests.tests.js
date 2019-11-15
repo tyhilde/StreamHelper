@@ -409,27 +409,53 @@ describe('intents', () => {
     });
   
     describe('getLastFiveSubscribers', () => {
+      const subscriberManyResponse = {
+        data: [ 
+            { user_name: 'userName1' },
+            { user_name: 'userName2' },
+            { user_name: 'userName3' },
+            { user_name: 'userName4' },
+            { user_name: 'userName5' }
+        ],
+        pagination: {
+            cursor: 'cursorId1'
+        }
+      };
+
       it('tells the user the name of the one subscriber', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 2, subscriptions:[{user: { display_name: 'user1'}}]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, {data: [ { user_name: 'userName1' }], pagination: {cursor: 'cursorId1'}});
 
         runIntent(getLastFiveSubscribersIntent)
           .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastXSubscribers(['user1']));
+            assert.deepEqual(outputSpeech, lastXSubscribers(['userName1']));
             assert(endOfSession);
             done();
           });
       });
 
-      it('tells the user the name of the subscribers', (done) => {
+      it('tells the user the name of the two subscribers', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 6, subscriptions:[{user: { display_name: 'user1'}}, {user: { display_name: 'user2'}}, {user: { display_name: 'user3'}}, {user: { display_name: 'user4'}}]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, {data: [ { user_name: 'userName1' },  { user_name: 'userName2' }], pagination: {cursor: 'cursorId1'}});
 
         runIntent(getLastFiveSubscribersIntent)
           .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastXSubscribers(['user1', 'user2', 'user3', 'user4']));
+            assert.deepEqual(outputSpeech, lastXSubscribers(['userName1', 'userName2']));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user the name of the 5 subscribers', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, subscriberManyResponse);
+
+        runIntent(getLastFiveSubscribersIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastXSubscribers(['userName1', 'userName2', 'userName3', 'userName4', 'userName5']));
             assert(endOfSession);
             done();
           });
@@ -437,25 +463,12 @@ describe('intents', () => {
 
       it('tells the user they have zero subscribers', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 1, subscriptions:[]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, {data: [], pagination: {cursor: 'cursorId1'}});
 
         runIntent(getLastFiveSubscribersIntent)
           .then(({ outputSpeech, endOfSession }) => {
             assert.deepEqual(outputSpeech, lastXSubscribers('NO_SUBSCRIBERS'));
-            assert(endOfSession);
-            done();
-          });
-      });
-
-      it('tells the user they have zero subscribers and are not parterned', (done) => {
-        nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {});
-
-        runIntent(getLastFiveSubscribersIntent)
-          .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastXSubscribers('NOT_A_PARTNER'));
             assert(endOfSession);
             done();
           });
