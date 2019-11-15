@@ -7,6 +7,7 @@ const {
 } = require('../secrets/credentials');
 const STREAM_OFFLINE = 'STREAM_OFFLINE';
 const NO_FOLLOWERS = 'NO_FOLLOWERS';
+const NO_SUBSCRIBERS = 'NO_SUBSCRIBERS';
 
 function isAccessTokenValid(accessToken) {
     return !!(accessToken);
@@ -19,6 +20,7 @@ function getPath({path, userName, userId, accessToken, pageCursor}) {
         followers: `/helix/users/follows?to_id=${userId}`,
         subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Deprecate: Update to helix once added to API
         subscribersNew: `/helix/subscriptions?broadcaster_id=${userId}&first=100&after=${pageCursor}`, // TODO: Might need pass &user_id as well, &after={cursor} to get following pages
+        subscribersMostRecent: `/helix/subscriptions?broadcaster_id=${userId}&first=1`,
         createClip: `/helix/clips?broadcaster_id=${userId}`,
     };
 
@@ -253,14 +255,20 @@ function getSubscribersCount(accessToken, callback) {
     });
 }
 
-function getSubscribersLast(accessToken, callback) {
-    getSubscribers(accessToken, (subscribers) => {
-        const isPartnered = !!(subscribers._total);
-        // Counts self as first subscriber
-        const lastSubscriber = subscribers._total > 1 ? subscribers.subscriptions[0].user.display_name : "NO_SUBSCRIBERS";
-        
-        callback(isPartnered ? lastSubscriber : "NOT_A_PARTNER");
+// This won't be the TRUE last subscriber until Twitch update endpoint to make this possible
+async function getSubscribersLast(accessToken) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'subscribersMostRecent',
+        method: 'GET',
+        accessToken,
+        userId: user.userId,
     });
+
+    // Returns empty array {data: []}, if not parternered or no subs
+    const subscriberName = result.data.length && result.data[0].user_name;
+
+    return subscriberName || NO_SUBSCRIBERS;
 }
 
 function getSubscribersLastFive(accessToken, callback) {
@@ -338,7 +346,6 @@ module.exports = {
     getViewerCount: getViewerCount,
     getSubscribers: getSubscribers,
     getSubscribersNew: getSubscribersNew,
-    // getSubscribersCountNew: getSubscribersCountNew,
     getSubscribersCount: getSubscribersCount,
     getSubscribersLast: getSubscribersLast,
     getSubscribersLastFive: getSubscribersLastFive,
@@ -346,5 +353,6 @@ module.exports = {
     createClip: createClip,
     sendTwitchMessage: sendTwitchMessage,
     STREAM_OFFLINE,
-    NO_FOLLOWERS
+    NO_FOLLOWERS,
+    NO_SUBSCRIBERS
 };

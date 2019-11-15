@@ -301,57 +301,6 @@ describe('subscribers', () => {
         });
     });
 
-    describe('getSubscribersLast', () => {
-        it('returns the last subscriber', (done) => {
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberResponse);
-
-            utils.getSubscribersLast(accessToken, (res) => {
-                assert.deepEqual(res, subscriberResponse.subscriptions[0].user.display_name);
-                done();
-            });
-        });
-
-        it('returns NO_SUBSCRIBERS if user doesnt have any subscribers', (done) => {
-            const noSubscribersResponse = {
-                _total: 1,
-                subscriptions: [
-                    {
-                        user: {
-                            display_name: 'user1'
-                        }, 
-                    }
-                ]
-            };
-
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, noSubscribersResponse);
-
-            utils.getSubscribersLast(accessToken, (res) => {
-                assert.deepEqual(res, "NO_SUBSCRIBERS");
-                done();
-            });
-        });
-
-        it('returns the NOT_A_PARTNER when user is not partnered', (done) => {
-            const subscriberNotAPartnerResponse = {
-                error: "Bad request",
-                status: 400
-            };
-
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberNotAPartnerResponse);
-
-            utils.getSubscribersLast(accessToken, (res) => {
-                assert.deepEqual(res, "NOT_A_PARTNER");
-                done();
-            });
-        });
-    });
-
     describe('getSubscribersLastFive', (done) => {
         it('returns the 1 subscriber if there are 2 including the user', (done) => {
             const subscriberNock = nock('https://api.twitch.tv')
@@ -459,27 +408,76 @@ describe('subscribersNew', () => {
         }
     };
 
-    it('returns object containing array of subscribers', async (done) => {
-        nock('https://api.twitch.tv')
-            .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
-            .reply(200, subscriberResponse);
+    const oneSubscriberResponse = {
+        data: [ 
+            {
+                broadcaster_id: 'broadcasterId1',
+                broadcaster_name: 'broadcasterName1',
+                is_gift: false,
+                plan_name: 'Channel Subscription',
+                tier: '1000',
+                user_id: 'userId1',
+                user_name: 'userName1'
+            }
+          ],
+        pagination: {
+            cursor: 'cursorId1'
+        }
+    };
+
+    const noSubscriberResponse = {
+        data: [],
+        pagination: {
+            cursor: 'cursorId1'
+        }
+    };
+
+    describe('getSubscribersNew', () => {
+        it('returns object containing array of subscribers', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+                .reply(200, subscriberResponse);
 
 
-        const res = await utils.getSubscribersNew(accessToken, '');
+            const res = await utils.getSubscribersNew(accessToken, '');
 
-        assert.deepEqual(res, subscriberResponse);
-        done();
+            assert.deepEqual(res, subscriberResponse);
+            done();
+        });
+
+        it('returns correct object when empty array of subscribers', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+                .reply(200, {data: [],  pagination: {cursor: 'cursor1'}});
+
+            const res = await utils.getSubscribersNew(accessToken, '');
+
+            assert.deepEqual(res, {data: [],  pagination: {cursor: 'cursor1'}});
+            done();
+        });
     });
 
-    it('returns correct object when empty array of subscribers', async (done) => {
-        nock('https://api.twitch.tv')
-            .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
-            .reply(200, {data: [],  pagination: {cursor: 'cursor1'}});
+    describe('getSubscribersLast', () => {
+        it('returns the last subscriber', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=1`)
+                .reply(200, oneSubscriberResponse);
 
-        const res = await utils.getSubscribersNew(accessToken, '');
+            const res = await utils.getSubscribersLast(accessToken);
 
-        assert.deepEqual(res, {data: [],  pagination: {cursor: 'cursor1'}});
-        done();
+            assert.deepEqual(res, subscriberResponse.data[0].user_name);
+            done();
+        });
+
+        it('returns NO_SUBSCRIBERS if user doesnt have any subscribers or is not partnered', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=1`)
+                .reply(200, noSubscriberResponse);
+
+            const res = await utils.getSubscribersLast(accessToken);
+            assert.deepEqual(res, utils.NO_SUBSCRIBERS);
+            done();
+        });
     });
 });
 

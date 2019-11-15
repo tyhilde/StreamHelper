@@ -78,10 +78,7 @@ module.exports.subscriberCount = (count) => {
 }
 
 module.exports.lastSubscriber = (subscriber) => {
-    if (subscriber === 'NOT_A_PARTNER') {
-        return 'You have zero subscribers, you are not a Twitch partner or affiliate.';
-    }
-    else if (subscriber === 'NO_SUBSCRIBERS') {
+    if (subscriber === 'NO_SUBSCRIBERS') {
         return 'You currently do not have any subscribers.';
     }
     else {

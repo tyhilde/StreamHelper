@@ -114,11 +114,11 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastSubscriber': function () {
+    'getLastSubscriber': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getSubscribersLast(this.event.session.user.accessToken, (subscriber) => {
-                this.emit(':tellWithCard', responses.lastSubscriber(subscriber), 'Subscribers', 'Last subscriber: ' + subscriber);
-            });
+            const subscriber = await getSubscribersLast(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.lastSubscriber(subscriber), 'Subscribers', 'Last subscriber: ' + subscriber);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
