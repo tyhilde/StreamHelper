@@ -104,11 +104,11 @@ const handlers = {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getSubscriberCount': function () {
+    'getSubscriberCount': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getSubscribersCount(this.event.session.user.accessToken, (count) => {
-                this.emit(':tellWithCard', responses.subscriberCount(count), 'Subscribers', 'Subscribers: ' + count);
-            });
+            const count = await getSubscribersCount(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.subscriberCount(count), 'Subscribers', 'Subscribers: ' + count);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());

@@ -271,35 +271,6 @@ describe('subscribers', () => {
             });
         });
     });
-
-    describe('getSubscribersCount', () => {
-        it('returns the count of subscribers', (done) => {
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberResponse);
-
-            utils.getSubscribersCount(accessToken, (res) => {
-                assert.deepEqual(res, subscriberResponse._total);
-                done();
-            });
-        });
-
-        it('returns the NOT_A_PARTNER when user is not partnered', (done) => {
-            const subscriberNotAPartnerResponse = {
-                error: "Bad request",
-                status: 400
-            };
-
-            const subscriberNock = nock('https://api.twitch.tv')
-                .get(`/kraken/channels/${userName}/subscriptions?oauth_token=${accessToken}&direction=desc`)
-                .reply(200, subscriberNotAPartnerResponse);
-
-            utils.getSubscribersCount(accessToken, (res) => {
-                assert.deepEqual(res, "NOT_A_PARTNER");
-                done();
-            });
-        });
-    });
 });
 
 describe('subscribersNew', () => {
@@ -347,7 +318,7 @@ describe('subscribersNew', () => {
             { user_name: 'userName5' }
           ],
         pagination: {
-            cursor: 'cursorId1'
+            cursor: 'cursorId2'
         }
     };
 
@@ -371,7 +342,7 @@ describe('subscribersNew', () => {
     const noSubscriberResponse = {
         data: [],
         pagination: {
-            cursor: 'cursorId1'
+            cursor: 'lastCursor'
         }
     };
 
@@ -454,6 +425,65 @@ describe('subscribersNew', () => {
             const res = await utils.getSubscribersLastFive(accessToken);
 
             assert.deepEqual(res, utils.NO_SUBSCRIBERS);
+            done();
+        });
+    });
+
+    describe('getSubscribersCount', () => {
+        it('returns the count 3 when there are 3 subscribers', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+                .reply(200, subscriberResponse);
+
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=cursorId1`)
+                .reply(200, noSubscriberResponse);
+
+            const res = await utils.getSubscribersCount(accessToken);
+
+            assert.deepEqual(res, 3);
+            done();
+        });
+
+        it('returns the count 0 when there are no subscribers', async (done) => {
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+                .reply(200, noSubscriberResponse);
+
+            const res = await utils.getSubscribersCount(accessToken);
+
+            assert.deepEqual(res, 0);
+            done();
+        });
+
+        it('returns the count 105 when there are 105 and multiple pages of subscribers', async (done) => {
+            const subsArr = [];
+            for(let i = 0; i < 100; i++) {
+                subsArr.push(i);
+            }
+
+            const subscriberFullPageResponse = {
+                data: [...subsArr],
+                pagination: {
+                    cursor: 'cursorId1'
+                }
+            };
+
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+                .reply(200, subscriberFullPageResponse);
+
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=cursorId1`)
+                .reply(200, subscriberManyResponse);
+
+            nock('https://api.twitch.tv')
+                .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=cursorId2`)
+                .reply(200, noSubscriberResponse);
+
+            const res = await utils.getSubscribersCount(accessToken);
+
+            assert.deepEqual(res, 105);
             done();
         });
     });

@@ -230,7 +230,7 @@ function getSubscribers(accessToken, callback) {
 // TODO: wait to here back on forum about returning in order
 // Getsubscribersnew func will return first page (up to 100)
 
-async function getSubscribersNew(accessToken, pageCursor) {
+async function getSubscribersNew(accessToken, pageCursor = '') {
     const user = await getUserAsync(accessToken);
     const result = await newAsyncFetch({
         endpoint: 'subscribersNew',
@@ -243,17 +243,20 @@ async function getSubscribersNew(accessToken, pageCursor) {
     return result;
 }
 
-// function getSubscribersCountNew(accessToken, callback) {
-//     // TODO: Hit api multiple times w/ page # until data: [] 
-// }
+async function getSubscribersCount(accessToken) {
+    let shouldKeepPaging = true;
+    let count = 0;
+    let cursor = '';
 
-function getSubscribersCount(accessToken, callback) {
-    getSubscribers(accessToken, (subscribers) => {
-        const isPartnered = !!(subscribers._total);
-        const count = isPartnered ? subscribers._total : "NOT_A_PARTNER";
+    while(shouldKeepPaging) {
+        const pageResult = await getSubscribersNew(accessToken, cursor);
 
-        callback(count);
-    });
+        cursor = pageResult.pagination.cursor;
+        count = count + pageResult.data.length;
+        shouldKeepPaging = !!(pageResult.data.length);
+    }
+
+    return count;
 }
 
 // This won't be the TRUE last subscriber until Twitch update endpoint to make this possible (currently doesnt allow sorting)
