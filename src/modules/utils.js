@@ -17,7 +17,7 @@ function getPath({path, userName, userId, accessToken, pageCursor}) {
         user: `/helix/users`,
         stream: `/helix/streams?user_id=${userId}`,
         followers: `/helix/users/follows?to_id=${userId}`,
-        subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Update to helix once added to API
+        subscribers: '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc", //TODO: Deprecate: Update to helix once added to API
         subscribersNew: `/helix/subscriptions?broadcaster_id=${userId}&first=100&after=${pageCursor}`, // TODO: Might need pass &user_id as well, &after={cursor} to get following pages
         createClip: `/helix/clips?broadcaster_id=${userId}`,
     };
@@ -227,18 +227,17 @@ function getSubscribers(accessToken, callback) {
 // TODO: wait to here back on forum about returning in order
 // Getsubscribersnew func will return first page (up to 100)
 
-function getSubscribersNew(accessToken, pageCursor, callback) {
-    getUser(accessToken, (user) => {
-        fetchJson({
-            endpoint: 'subscribersNew',
-            method: 'GET',
-            accessToken,
-            userId: user.userId,
-            pageCursor
-        }, (res) => {
-            callback(res);
-        });
+async function getSubscribersNew(accessToken, pageCursor) {
+    const user = await getUserAsync(accessToken);
+    const result = await newAsyncFetch({
+        endpoint: 'subscribersNew',
+        method: 'GET',
+        accessToken,
+        userId: user.userId,
+        pageCursor
     });
+
+    return result;
 }
 
 // function getSubscribersCountNew(accessToken, callback) {

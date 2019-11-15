@@ -436,8 +436,8 @@ describe('subscribersNew', () => {
                 user_name: 'userName1'
             },
             {
-                broadcaster_id: 'broadcasterId1',
-                broadcaster_name: 'broadcasterName1',
+                broadcaster_id: 'broadcasterId2',
+                broadcaster_name: 'broadcasterName2',
                 is_gift: false,
                 plan_name: 'Channel Subscription',
                 tier: '1000',
@@ -445,13 +445,13 @@ describe('subscribersNew', () => {
                 user_name: 'userName2'
             },
             { 
-                broadcaster_id: '32799121',
-                broadcaster_name: 'BackSH00TER',
+                broadcaster_id: 'broadcasterId3',
+                broadcaster_name: 'broadcasterName3',
                 is_gift: false,
-                plan_name: 'Channel Subscription (backsh00ter)',
+                plan_name: 'Channel Subscription',
                 tier: '1000',
-                user_id: '65406844',
-                user_name: 'Crusader_09'
+                user_id: 'userId3',
+                user_name: 'userName3'
             }
           ],
         pagination: {
@@ -459,26 +459,27 @@ describe('subscribersNew', () => {
         }
     };
 
-    it('returns object containing array of subscribers', (done) => {
-        const subscriberNock = nock('https://api.twitch.tv')
+    it('returns object containing array of subscribers', async (done) => {
+        nock('https://api.twitch.tv')
             .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
             .reply(200, subscriberResponse);
 
-        utils.getSubscribersNew(accessToken, '', (res) => {
-            assert.deepEqual(res, subscriberResponse);
-            done();
-        });
+
+        const res = await utils.getSubscribersNew(accessToken, '');
+
+        assert.deepEqual(res, subscriberResponse);
+        done();
     });
 
-    it('returns correct object when empty array of subscribers', (done) => {
-        const subscriberNock = nock('https://api.twitch.tv')
+    it('returns correct object when empty array of subscribers', async (done) => {
+        nock('https://api.twitch.tv')
             .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
             .reply(200, {data: [],  pagination: {cursor: 'cursor1'}});
 
-        utils.getSubscribersNew(accessToken, '', (res) => {
-            assert.deepEqual(res, {data: [],  pagination: {cursor: 'cursor1'}});
-            done();
-        });
+        const res = await utils.getSubscribersNew(accessToken, '');
+
+        assert.deepEqual(res, {data: [],  pagination: {cursor: 'cursor1'}});
+        done();
     });
 });
 
