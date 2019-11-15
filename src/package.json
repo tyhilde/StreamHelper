@@ -1,11 +1,11 @@
 {
   "name": "streamhelper",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A Twitch tool to helper streamers",
   "main": "index.js",
   "scripts": {
     "test": "mocha ./tests/*.tests.js",
-    "test-utils": "mocha ./modules/tests/*.tests.js",
+    "test-utils": "mocha ./tests/utils.tests.js",
     "lint": "eslint ./**/*.js",
     "postinstall": "npm i alexa-sdk tmi.js --prefix dist",
     "deploy": "gulp deploy",
@@ -30,7 +30,8 @@
   "homepage": "https://github.com/tyhilde/StreamHelper#readme",
   "dependencies": {
     "alexa-sdk": "^1.0.25",
-    "tmi.js": "^1.2.1"
+    "tmi.js": "^1.2.1",
+    "node-fetch": "2.6.0"
   },
   "devDependencies": {
     "aws-lambda-mock-context": "^3.0.0",

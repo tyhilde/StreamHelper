@@ -12,7 +12,9 @@ const {
     getSubscribersLast,
     getSubscribersLastFive,
     createClip,
-    sendTwitchMessage
+    sendTwitchMessage,
+    STREAM_OFFLINE,
+    NO_FOLLOWERS
 } = require('./modules/utils');
 
 const {
@@ -32,120 +34,120 @@ const handlers = {
     'LaunchRequest': function() {
         this.emit(':ask', responses.welcome(), responses.helpMessageReprompt());
     },
-    'isStreamLive': function() {
+    'isStreamLive': async function() {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            isStreamLive(this.event.session.user.accessToken, (isLive) => {
-                isLive ?
-                    this.emit(':tell', responses.streamLive()) :
-                    this.emit(':tell', responses.streamNotLive());
-            });
+            const isLive = await isStreamLive(this.event.session.user.accessToken);
+           
+            isLive ?
+                this.emit(':tell', responses.streamLive()) :
+                this.emit(':tell', responses.streamNotLive());
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getStreamUpTime': function() {
+    'getStreamUpTime': async function() {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getStreamUpTime(this.event.session.user.accessToken, (uptime) => {
-                uptime === 'STREAM_OFFLINE' ?
-                    this.emit(':tell', responses.streamNotLive()) :
-                    this.emit(':tellWithCard', responses.streamUpTime(uptime), 'Uptime', uptime.hours + 'hrs ' + uptime.minutes + 'mins');
-            });
+            const uptime = await getStreamUpTime(this.event.session.user.accessToken);
+
+            uptime === STREAM_OFFLINE ?
+                this.emit(':tell', responses.streamNotLive()) :
+                this.emit(':tellWithCard', responses.streamUpTime(uptime), 'Uptime', uptime.hours + 'hrs ' + uptime.minutes + 'mins');
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getFollowerCount': function () {
+    'getFollowerCount': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getFollowersCount(this.event.session.user.accessToken, (count) => {
-                count > 0 ?
-                    this.emit(':tellWithCard', responses.followerCount(count), 'Followers', 'Followers: ' + count) :
-                    this.emit(':tell', responses.noFollowers());
-            });
+            const count = await getFollowersCount(this.event.session.user.accessToken);
+
+            count > 0 ?
+                this.emit(':tellWithCard', responses.followerCount(count), 'Followers', 'Followers: ' + count) :
+                this.emit(':tell', responses.noFollowers());
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastFollower': function () {
+    'getLastFollower': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getFollowersLast(this.event.session.user.accessToken, (follower) => {
-                follower === 'NO_FOLLOWERS' ?
-                    this.emit(':tell', responses.noFollowers()) :
-                    this.emit(':tellWithCard', responses.lastFollower(follower), 'Followers', 'Last follower: ' + follower);
-            });
+            const follower = await getFollowersLast(this.event.session.user.accessToken);
+
+            follower === NO_FOLLOWERS ?
+                this.emit(':tell', responses.noFollowers()) :
+                this.emit(':tellWithCard', responses.lastFollower(follower), 'Followers', 'Last follower: ' + follower);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastFiveFollowers': function () {
+    'getLastFiveFollowers': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getFollowersLastFive(this.event.session.user.accessToken, (followers) => {
-                followers === 'NO_FOLLOWERS' ?
-                    this.emit(':tell', responses.noFollowers()) :
-                    this.emit(':tellWithCard', responses.lastXFollowers(followers), 'Followers', 'Followers: ' + followers);
-            });
+            const followers = await getFollowersLastFive(this.event.session.user.accessToken);
+            
+            followers === NO_FOLLOWERS ?
+                this.emit(':tell', responses.noFollowers()) :
+                this.emit(':tellWithCard', responses.lastXFollowers(followers), 'Followers', 'Followers: ' + followers);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getViewerCount': function () {
+    'getViewerCount': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getViewerCount(this.event.session.user.accessToken, (count) => {
-                this.emit(':tellWithCard', responses.viewerCount(count), 'Viewers', 'Viewers: ' + count);
-            });
+            const count = await getViewerCount(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.viewerCount(count), 'Viewers', 'Viewers: ' + count);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getSubscriberCount': function () {
+    'getSubscriberCount': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getSubscribersCount(this.event.session.user.accessToken, (count) => {
-                this.emit(':tellWithCard', responses.subscriberCount(count), 'Subscribers', 'Subscribers: ' + count);
-            });
+            const count = await getSubscribersCount(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.subscriberCount(count), 'Subscribers', 'Subscribers: ' + count);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastSubscriber': function () {
+    'getLastSubscriber': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getSubscribersLast(this.event.session.user.accessToken, (subscriber) => {
-                this.emit(':tellWithCard', responses.lastSubscriber(subscriber), 'Subscribers', 'Last subscriber: ' + subscriber);
-            });
+            const subscriber = await getSubscribersLast(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.lastSubscriber(subscriber), 'Subscribers', 'Last subscriber: ' + subscriber);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'getLastFiveSubscribers': function () {
+    'getLastFiveSubscribers': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            getSubscribersLastFive(this.event.session.user.accessToken, (subscribers) => {
-                this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Subscribers: ' + subscribers);
-            });
+            const subscribers = await getSubscribersLastFive(this.event.session.user.accessToken);
+
+            this.emit(':tellWithCard', responses.lastXSubscribers(subscribers), 'Subscribers', 'Subscribers: ' + subscribers);
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());
         }
     },
-    'createClip': function () {
+    'createClip': async function () {
         if(isAccessTokenValid(this.event.session.user.accessToken)) {
-            createClip(this.event.session.user.accessToken, (res) => {
-                if (res.clip === 'STREAM_OFFLINE') {
-                    this.emit(':tell', responses.clipStreamOffline());
-                }
-                else {
-                    var clipUrl = res.clip.edit_url;
-                    var clipUrlTrimmed = clipUrl.substring(0, clipUrl.length-5);
-                    sendTwitchMessage(clipUrlTrimmed, res.userName, (response) => {
-                        this.emit(':tellWithCard', responses.clipCreated(res.clip), 'Clip Created', 'Clip URL: ' + res.clip.edit_url);
-                    })
-                }   
-            });
+            const res = await createClip(this.event.session.user.accessToken);
+
+            if (res.clip === STREAM_OFFLINE) {
+                this.emit(':tell', responses.clipStreamOffline());
+            }
+            else {
+                var clipUrl = res.clip.edit_url;
+                var clipUrlTrimmed = clipUrl.substring(0, clipUrl.length-5);
+                sendTwitchMessage(clipUrlTrimmed, res.userName, () => {
+                    this.emit(':tellWithCard', responses.clipCreated(res.clip), 'Clip Created', 'Clip URL: ' + res.clip.edit_url);
+                })
+            }
         }
         else {
             this.emit(':tellWithLinkAccountCard', responses.loginNeeded());

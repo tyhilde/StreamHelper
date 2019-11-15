@@ -3,58 +3,84 @@
 var utils = require('../modules/utils');
 const {ClientAccessToken} = require('../secrets/credentials');
 
-// utils.getUser(ClientAccessToken, (res) => {
-//     console.log('getuser res', res);
-// })
+async function getUser() {
+    var res = await utils.getUser(ClientAccessToken);
+    console.log('getUser res', res);
+}
 
-// utils.isStreamLive(ClientAccessToken, (res) => {
-//     console.log('streamLive res', res);
-// })
+async function isStreamLive() {
+    var res = await utils.isStreamLive(ClientAccessToken);
+    console.log('isStreamLive res', res);
+};
 
-// utils.getStreamUpTime(ClientAccessToken, (res) => {
-//     console.log('getStreamupTime res', res);
-// })
+async function getStreamUpTime() {
+    var res = await utils.getStreamUpTime(ClientAccessToken);
+    console.log('getStreamUpTime res', res);
+};
 
-// utils.getFollowers(ClientAccessToken, (res) => {
-//     console.log('getFollowers res', res);
-// });
+async function getFollowers() {
+    var res = await utils.getFollowers(ClientAccessToken);
+    console.log('getFollowers res', res);
+};
 
-// utils.getFollowersCount(ClientAccessToken, (res) => {
-//     console.log('followersCount res', res);
-// })
+async function getFollowersCount() {
+    var res = await utils.getFollowersCount(ClientAccessToken);
+    console.log('getFollowersCount res', res);
+};
 
-// utils.getFollowersLast(ClientAccessToken, (res) => {
-//     console.log('getFollowersLast res', res);
-// })
+async function getFollowersLast() {
+    var res = await utils.getFollowersLast(ClientAccessToken);
+    console.log('getFollowersLast res', res);
+};
 
-// utils.getFollowersLastFive(ClientAccessToken, (res) => {
-//     console.log('getFollowersLastFive res', res);
-// })
+async function getFollowersLastFive() {
+    var res = await utils.getFollowersLastFive(ClientAccessToken);
+    console.log('getFollowersLastFive res', res);
+};
 
-// utils.getViewerCount(ClientAccessToken, (res) => {
-//     console.log('getViewerCount res', res);
-// })
+async function getViewerCount() {
+    var res = await utils.getViewerCount(ClientAccessToken);
+    console.log('getViewerCount res', res);
+};
 
-// utils.getSubscribers(ClientAccessToken, (res) => {
-//     console.log('getSubscribers res', res);
-//     console.log('getSubscribers res', res.subscriptions);
-// })
+async function getSubscribers() {
+    var res = await utils.getSubscribers(ClientAccessToken, '');
+    console.log('getSubscribers res', res);
+};
 
-// utils.getSubscribersCount(ClientAccessToken, (res) => {
-//     console.log('getSubscribersCount res', res);
-// })
+async function getSubscribersLast() {
+    var res = await utils.getSubscribersLast(ClientAccessToken);
+    console.log('getSubscribersLast res', res);
+};
 
-// utils.getSubscribersLast(ClientAccessToken, (res) => {
-//     console.log('getSubscribersLast res', res);
-// })
+async function getSubscribersLastFive() {
+    var res = await utils.getSubscribersLastFive(ClientAccessToken);
+    console.log('getSubscribersLastFive res', res);
+};
 
-// utils.getSubscribersLastFive(ClientAccessToken, (res) => {
-//     console.log('getSubscribersLastFive res', res);
-// })
+async function getSubscribersCount() {
+    var res = await utils.getSubscribersCount(ClientAccessToken);
+    console.log('getSubscribersCount res', res);
+};
 
-// utils.createClip(ClientAccessToken, (res) => {
-//     console.log('createClip res', res);
-// })
+async function createClip() {
+    var res = await utils.createClip(ClientAccessToken);
+    console.log('createClip res', res);
+};
+
+// getUser();
+// isStreamLive();
+// getStreamUpTime();
+// getFollowers();
+// getFollowersCount();
+// getFollowersLast();
+// getFollowersLastFive();
+// getViewerCount();
+// getSubscribers();
+// getSubscribersLast();
+// getSubscribersLastFive();
+// getSubscribersCount();
+// createClip();
 
 // utils.sendTwitchMessage('someMessage test', 'backsh00ter',  (res) => {
 //     console.log('sendTwitchMessage res', res);

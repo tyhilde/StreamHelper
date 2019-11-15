@@ -331,42 +331,39 @@ describe('intents', () => {
 
   describe('subscribers', () => {
     describe('getSubscriberCount', () => {
+      const subscriberManyResponse = {
+        data: [ 
+            { user_name: 'userName1' },
+            { user_name: 'userName2' },
+            { user_name: 'userName3' },
+            { user_name: 'userName4' },
+            { user_name: 'userName5' }
+          ],
+        pagination: {
+            cursor: 'cursorId11'
+        }
+      };
+
+      const noSubscriberResponse = {
+        data: [],
+        pagination: {
+            cursor: 'lastCursor1'
+        }
+      };
+
       it('tells the user the number of subscribers', (done) => {
+        // Two nocks since it loops through until data: []
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 50, data:[{}]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+          .reply(200, subscriberManyResponse);
+
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=cursorId11`)
+          .reply(200, noSubscriberResponse);
 
         runIntent(getSubscriberCountIntent)
           .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, subscriberCount(50));
-            assert(endOfSession);
-            done();
-          });
-      });
-
-      it('tells the user they have zero subscribers and are not parterned', (done) => {
-        nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {});
-
-        runIntent(getSubscriberCountIntent)
-          .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, subscriberCount('NOT_A_PARTNER'));
-            assert(endOfSession);
-            done();
-          });
-      });
-    });
-
-    describe('getLastSubscriber', () => {
-      it('tells the user the number of subscribers', (done) => {
-        nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 50, subscriptions:[{user: { display_name: 'user1'}}]});
-
-        runIntent(getLastSubscriberIntent)
-          .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastSubscriber('user1'));
+            assert.deepEqual(outputSpeech, subscriberCount(5));
             assert(endOfSession);
             done();
           });
@@ -374,8 +371,79 @@ describe('intents', () => {
 
       it('tells the user they have zero subscribers', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 1, subscriptions:[]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+          .reply(200, {data:[], pagination:{cursor: 'cursorId11'}});
+
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=cursorId11`)
+          .reply(200, noSubscriberResponse);
+
+        runIntent(getSubscriberCountIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, subscriberCount(0));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user they have one subscriber', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=`)
+          .reply(200, {data:[{user_name: 'userName1'}], pagination:{cursor: 'cursorId11'}});
+
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=100&after=cursorId11`)
+          .reply(200, noSubscriberResponse);
+
+        runIntent(getSubscriberCountIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, subscriberCount(1));
+            assert(endOfSession);
+            done();
+          });
+      });
+    });
+
+    describe('getLastSubscriber', () => {
+      it('tells the user the name of the last subscriber', (done) => {
+        const oneSubscriberResponse = {
+          data: [ 
+              {
+                  broadcaster_id: 'broadcasterId1',
+                  broadcaster_name: 'broadcasterName1',
+                  is_gift: false,
+                  plan_name: 'Channel Subscription',
+                  tier: '1000',
+                  user_id: 'userId1',
+                  user_name: 'userName1'
+              }
+            ],
+          pagination: {
+              cursor: 'cursorId1'
+          }
+      };
+
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=1`)
+          .reply(200, oneSubscriberResponse);
+
+        runIntent(getLastSubscriberIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastSubscriber('userName1'));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user they have zero subscribers', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=1`)
+          .reply(200, {
+            data: [],
+            pagination: {
+                cursor: 'cursorId1'
+            }
+        });
 
         runIntent(getLastSubscriberIntent)
           .then(({ outputSpeech, endOfSession }) => {
@@ -384,43 +452,56 @@ describe('intents', () => {
             done();
           });
       });
-
-      it('tells the user they have zero subscribers and are not parterned', (done) => {
-        nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {});
-
-        runIntent(getLastSubscriberIntent)
-          .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, subscriberCount('NOT_A_PARTNER'));
-            assert(endOfSession);
-            done();
-          });
-      });
     });
   
     describe('getLastFiveSubscribers', () => {
+      const subscriberManyResponse = {
+        data: [ 
+            { user_name: 'userName1' },
+            { user_name: 'userName2' },
+            { user_name: 'userName3' },
+            { user_name: 'userName4' },
+            { user_name: 'userName5' }
+        ],
+        pagination: {
+            cursor: 'cursorId1'
+        }
+      };
+
       it('tells the user the name of the one subscriber', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 2, subscriptions:[{user: { display_name: 'user1'}}]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, {data: [ { user_name: 'userName1' }], pagination: {cursor: 'cursorId1'}});
 
         runIntent(getLastFiveSubscribersIntent)
           .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastXSubscribers(['user1']));
+            assert.deepEqual(outputSpeech, lastXSubscribers(['userName1']));
             assert(endOfSession);
             done();
           });
       });
 
-      it('tells the user the name of the subscribers', (done) => {
+      it('tells the user the name of the two subscribers', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 6, subscriptions:[{user: { display_name: 'user1'}}, {user: { display_name: 'user2'}}, {user: { display_name: 'user3'}}, {user: { display_name: 'user4'}}]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, {data: [ { user_name: 'userName1' },  { user_name: 'userName2' }], pagination: {cursor: 'cursorId1'}});
 
         runIntent(getLastFiveSubscribersIntent)
           .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastXSubscribers(['user1', 'user2', 'user3', 'user4']));
+            assert.deepEqual(outputSpeech, lastXSubscribers(['userName1', 'userName2']));
+            assert(endOfSession);
+            done();
+          });
+      });
+
+      it('tells the user the name of the 5 subscribers', (done) => {
+        nock('https://api.twitch.tv')
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, subscriberManyResponse);
+
+        runIntent(getLastFiveSubscribersIntent)
+          .then(({ outputSpeech, endOfSession }) => {
+            assert.deepEqual(outputSpeech, lastXSubscribers(['userName1', 'userName2', 'userName3', 'userName4', 'userName5']));
             assert(endOfSession);
             done();
           });
@@ -428,25 +509,12 @@ describe('intents', () => {
 
       it('tells the user they have zero subscribers', (done) => {
         nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {_total: 1, subscriptions:[]});
+          .get(`/helix/subscriptions?broadcaster_id=${userId}&first=5`)
+          .reply(200, {data: [], pagination: {cursor: 'cursorId1'}});
 
         runIntent(getLastFiveSubscribersIntent)
           .then(({ outputSpeech, endOfSession }) => {
             assert.deepEqual(outputSpeech, lastXSubscribers('NO_SUBSCRIBERS'));
-            assert(endOfSession);
-            done();
-          });
-      });
-
-      it('tells the user they have zero subscribers and are not parterned', (done) => {
-        nock('https://api.twitch.tv')
-          .get(`/kraken/channels/${userName}/subscriptions?oauth_token=testAccessToken&direction=desc`)
-          .reply(200, {});
-
-        runIntent(getLastFiveSubscribersIntent)
-          .then(({ outputSpeech, endOfSession }) => {
-            assert.deepEqual(outputSpeech, lastXSubscribers('NOT_A_PARTNER'));
             assert(endOfSession);
             done();
           });
