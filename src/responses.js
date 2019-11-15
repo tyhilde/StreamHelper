@@ -96,7 +96,7 @@ module.exports.lastXSubscribers = (subscribers) => {
         else {
             const length = subscribers.length;
             const names = subscribers.slice(0, -1).join(', ') + ', and ' + subscribers.slice(-1);
-            return `Your last ${length} followers were ${names}.`;
+            return `Your last ${length} subscribers were ${names}.`;
         }
     }
 }
