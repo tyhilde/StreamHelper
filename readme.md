@@ -18,6 +18,8 @@ To change which Lambda function is deployed to, change `functionName` in [lambda
 
 > If you need to deploy to the TestSkill, ensure you also update the `AlexaAppId` in the `credentials.js` file to match. If you forget to do this step, the App will not run and will give `Error: Invalid ApplicationId`.
 
+> TODO: Upgrade the deploy script to ask which environment (EU vs US) to deploy to along with which lambda function (test vs prod) to deploy to
+
 
 ## Testing
 
