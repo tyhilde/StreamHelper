@@ -14,7 +14,7 @@ Run `npm run deploy` to run the gulp script to upload files to Lambda function.
 
 This function will inject Environment variables from the secrets file, add relevant files to the dist/ folder, zip all these files, and then upload to the selected Lambda function.
 
-To change which Lambda function is deployed to, change `functionName` in [lambda-config.js](../src/lambda-config.js)
+To change which Lambda function is deployed to, change `functionName` in [lambda-config.js](./src/lambda-config.js)
 
 > If you need to deploy to the TestSkill, ensure you also update the `AlexaAppId` in the `credentials.js` file to match. If you forget to do this step, the App will not run and will give `Error: Invalid ApplicationId`.
 
