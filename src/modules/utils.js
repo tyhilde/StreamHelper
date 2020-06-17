@@ -2,6 +2,7 @@ const tmi = require('tmi.js');
 const fetch = require('node-fetch');
 
 const {
+    TwitchAppClientId,
     TwitchBotPassword
 } = require('../secrets/credentials');
 const STREAM_OFFLINE = 'STREAM_OFFLINE';
@@ -34,7 +35,8 @@ async function asyncFetch({endpoint, method, accessToken, userId, pageCursor}) {
         path: path,
         method: method,
         headers: {
-            Authorization: 'Bearer ' + accessToken
+            Authorization: 'Bearer ' + accessToken,
+            'Client-ID': TwitchAppClientId
         }
     };
     const absoluteUrl = 'https://api.twitch.tv' + path;
